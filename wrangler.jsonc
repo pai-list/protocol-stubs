@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "protocol-stubs",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-22",
+  "routes": [
+    { "pattern": "aip.axiomid.app/*", "zone_name": "axiomid.app" },
+    { "pattern": "auth.axiomid.app/*", "zone_name": "axiomid.app" },
+    { "pattern": "earn.axiomid.app/*", "zone_name": "axiomid.app" },
+    { "pattern": "jobs.axiomid.app/*", "zone_name": "axiomid.app" },
+    { "pattern": "ppp.axiomid.app/*", "zone_name": "axiomid.app" }
+  ]
+}
