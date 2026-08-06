@@ -265,6 +265,115 @@ const ENTERPRISE_CSS = `
     gap: 3rem;
   }
 
+  /* Language Selector Modal Styling */
+  .lang-btn {
+    background: rgba(192, 132, 252, 0.12);
+    border: 1px solid rgba(192, 132, 252, 0.35);
+    color: #e9d5ff;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    font-size: 0.775rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.25s ease;
+  }
+  .lang-btn:hover {
+    background: rgba(192, 132, 252, 0.25);
+    border-color: var(--accent-purple);
+    box-shadow: 0 0 18px rgba(192, 132, 252, 0.45);
+    transform: translateY(-1px);
+  }
+  
+  .lang-modal-backdrop {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(2, 6, 23, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    animation: fadeIn 0.2s ease-out;
+  }
+  .lang-modal-card {
+    background: #0f172a;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: var(--radius-xl);
+    width: 100%;
+    max-width: 520px;
+    padding: 2rem;
+    box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.9);
+    position: relative;
+    box-sizing: border-box;
+    text-align: left;
+  }
+  [dir="rtl"] .lang-modal-card { text-align: right; }
+  .lang-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  .lang-modal-title {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #fff;
+  }
+  .lang-modal-close {
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+    color: #94a3b8;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    transition: all 0.2s ease;
+  }
+  .lang-modal-close:hover {
+    background: rgba(244, 63, 94, 0.2);
+    color: var(--accent-rose);
+  }
+  .lang-option-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+  .lang-option-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-radius: 1rem;
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .lang-option-item:hover, .lang-option-item.selected {
+    background: rgba(0, 240, 255, 0.08);
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.15);
+  }
+  .lang-flag-name {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+  }
+  .lang-flag { font-size: 1.5rem; }
+  .lang-label { font-weight: 700; color: #fff; font-size: 1rem; }
+  .lang-sublabel { font-size: 0.75rem; color: var(--text-muted); }
+  .lang-check { color: var(--accent-cyan); font-weight: 800; font-size: 1.2rem; }
+  @keyframes fadeIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+
   /* Hero Section */
   .hero-box {
     background: var(--card-bg);
@@ -428,16 +537,16 @@ const ENTERPRISE_CSS = `
   .footer-links a:hover { color: var(--accent-cyan); }
 `;
 
-/* Unified Top Navigation Component (xmcp.dev Centered Logo Pattern) */
+/* Unified Top Navigation Component (xmcp.dev Centered Logo Pattern + Language Selector) */
 function getNavbarHtml(activeKey: string): string {
   return `<header>
   <div class="nav-container-xmcp">
     <div class="nav-group-left">
-      <a href="https://index.axiomid.app" class="nav-item ${activeKey === "index" ? "active" : ""}">Index Mirror</a>
-      <a href="https://axiomid.app" class="nav-item">Identity</a>
-      <a href="https://aip.axiomid.app" class="nav-item ${activeKey === "aip" ? "active" : ""}">AIP Vault</a>
-      <a href="https://ppp.axiomid.app" class="nav-item ${activeKey === "ppp" ? "active" : ""}">PPP Wire</a>
-      <a href="https://memory.axiomid.app" class="nav-item ${activeKey === "memory" ? "active" : ""}">7-Layer Memory</a>
+      <a href="https://index.axiomid.app" class="nav-item ${activeKey === "index" ? "active" : ""}" data-i18n="indexMirror">Index Mirror</a>
+      <a href="https://axiomid.app" class="nav-item" data-i18n="identity">Identity</a>
+      <a href="https://aip.axiomid.app" class="nav-item ${activeKey === "aip" ? "active" : ""}" data-i18n="aipVault">AIP Vault</a>
+      <a href="https://ppp.axiomid.app" class="nav-item ${activeKey === "ppp" ? "active" : ""}" data-i18n="pppWire">PPP Wire</a>
+      <a href="https://memory.axiomid.app" class="nav-item ${activeKey === "memory" ? "active" : ""}" data-i18n="memory7">7-Layer Memory</a>
     </div>
 
     <!-- Centered Logo (xmcp.dev Pattern) -->
@@ -450,26 +559,30 @@ function getNavbarHtml(activeKey: string): string {
     </a>
 
     <div class="nav-group-right">
-      <a href="https://earn.axiomid.app" class="nav-item ${activeKey === "earn" ? "active" : ""}">Machine Exchange</a>
-      <a href="https://auth.axiomid.app" class="nav-item ${activeKey === "auth" ? "active" : ""}">OAuth2 & DID</a>
-      <a href="https://skills.axiomid.app" class="nav-item ${activeKey === "skills" ? "active" : ""}">Skills MCP</a>
-      <a href="https://mail.axiomid.app" class="nav-item ${activeKey === "mail" ? "active" : ""}">Email Gateway</a>
+      <a href="https://earn.axiomid.app" class="nav-item ${activeKey === "earn" ? "active" : ""}" data-i18n="machineExchange">Machine Exchange</a>
+      <a href="https://auth.axiomid.app" class="nav-item ${activeKey === "auth" ? "active" : ""}" data-i18n="oauthDid">OAuth2 & DID</a>
+      <a href="https://skills.axiomid.app" class="nav-item ${activeKey === "skills" ? "active" : ""}" data-i18n="skillsMcp">Skills MCP</a>
+      <a href="https://mail.axiomid.app" class="nav-item ${activeKey === "mail" ? "active" : ""}" data-i18n="emailGateway">Email Gateway</a>
+      <button class="lang-btn" onclick="openLangModal()" id="langTriggerBtn" aria-label="Select Protocol Language">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <span id="langBtnText">🌐 Language</span>
+      </button>
       <div class="status-badge">
         <span class="status-pulse"></span>
-        LIVE EDGE
+        <span data-i18n="liveEdge">LIVE EDGE</span>
       </div>
     </div>
   </div>
 </header>`;
 }
 
-/* Universal Footer Component */
+/* Universal Footer Component with Language Modal & Translation Engine */
 function getFooterHtml(): string {
   return `<footer>
   <div class="footer-inner">
     <div>
-      <div class="footer-title">PAI Universe Subdomain Mirror</div>
-      <p style="line-height:1.6;max-width:280px;">Sovereign AI Agent Architecture for Pi Network. Enterprise-grade identity, key insulation, and wire protocol standards.</p>
+      <div class="footer-title" data-i18n="footerTitle">PAI Universe Subdomain Mirror</div>
+      <p style="line-height:1.6;max-width:280px;" data-i18n="footerDesc">Sovereign AI Agent Architecture for Pi Network. Enterprise-grade identity, key insulation, and wire protocol standards.</p>
     </div>
     <div>
       <div class="footer-title">Identity & Vault</div>
@@ -496,7 +609,142 @@ function getFooterHtml(): string {
       </div>
     </div>
   </div>
-</footer>`;
+</footer>
+
+<!-- Language Selector Modal Overlay -->
+<div class="lang-modal-backdrop" id="langModalBackdrop" onclick="if(event.target===this) closeLangModal()">
+  <div class="lang-modal-card">
+    <div class="lang-modal-header">
+      <div class="lang-modal-title">Select Protocol Language / اختر اللغة / 选择语言</div>
+      <button class="lang-modal-close" onclick="closeLangModal()">&times;</button>
+    </div>
+    <div class="lang-option-list">
+      <div class="lang-option-item" id="opt-en" onclick="setLanguage('en')">
+        <div class="lang-flag-name">
+          <span class="lang-flag">🇺🇸</span>
+          <div>
+            <div class="lang-label">English (US)</div>
+            <div class="lang-sublabel">Default Protocol Language • LTR</div>
+          </div>
+        </div>
+        <span class="lang-check" id="check-en">✓</span>
+      </div>
+      <div class="lang-option-item" id="opt-ar" onclick="setLanguage('ar')">
+        <div class="lang-flag-name">
+          <span class="lang-flag">🇸🇦</span>
+          <div>
+            <div class="lang-label">العربية (Arabic)</div>
+            <div class="lang-sublabel">النظام العربي السيادي • RTL Auto-Layout</div>
+          </div>
+        </div>
+        <span class="lang-check" id="check-ar" style="display:none;">✓</span>
+      </div>
+      <div class="lang-option-item" id="opt-zh" onclick="setLanguage('zh')">
+        <div class="lang-flag-name">
+          <span class="lang-flag">🇨🇳</span>
+          <div>
+            <div class="lang-label">简体中文 (Chinese)</div>
+            <div class="lang-sublabel">主权 AI 智能体协议 • LTR</div>
+          </div>
+        </div>
+        <span class="lang-check" id="check-zh" style="display:none;">✓</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const DICT = {
+  en: {
+    indexMirror: "Index Mirror",
+    identity: "Identity",
+    aipVault: "AIP Vault",
+    pppWire: "PPP Wire",
+    memory7: "7-Layer Memory",
+    machineExchange: "Machine Exchange",
+    oauthDid: "OAuth2 & DID",
+    skillsMcp: "Skills MCP",
+    emailGateway: "Email Gateway",
+    liveEdge: "LIVE EDGE",
+    langBtn: "🌐 Language",
+    footerTitle: "PAI Universe Subdomain Mirror",
+    footerDesc: "Sovereign AI Agent Architecture for Pi Network. Enterprise-grade identity, key insulation, and wire protocol standards."
+  },
+  ar: {
+    indexMirror: "مرآة الفهرس",
+    identity: "الهوية السيادية",
+    aipVault: "خزينة AIP",
+    pppWire: "سلك PPP",
+    memory7: "الذاكرة سباعية الطبقات",
+    machineExchange: "بورصة الآلات",
+    oauthDid: "مصادقة OAuth2 و DID",
+    skillsMcp: "مخدم المهارات MCP",
+    emailGateway: "بوابة البريد",
+    liveEdge: "البث الحي",
+    langBtn: "🌐 العربية (🇸🇦)",
+    footerTitle: "مرآة النطاقات الفرعية لكون PAI",
+    footerDesc: "معمارية وكلاء الذكاء الاصطناعي السيادية لشبكة باي. هوية مؤسسية وعزل مفاتيح ومعايير بروتوكولية فائقة الأمان."
+  },
+  zh: {
+    indexMirror: "索引镜像",
+    identity: "主权身份",
+    aipVault: "AIP 密钥库",
+    pppWire: "PPP 总线",
+    memory7: "7层记忆引擎",
+    machineExchange: "机器劳务交易所",
+    oauthDid: "OAuth2 与 DID",
+    skillsMcp: "技能 MCP 服务器",
+    emailGateway: "智能邮件网关",
+    liveEdge: "实时边缘",
+    langBtn: "🌐 简体中文 (🇨🇳)",
+    footerTitle: "PAI 宇宙子域名镜像目录",
+    footerDesc: "Pi Network 主权 AI 智能体架构。企业级身份认证、密钥隔离与通信总线协议标准。"
+  }
+};
+
+function openLangModal() {
+  document.getElementById("langModalBackdrop").style.display = "flex";
+}
+function closeLangModal() {
+  document.getElementById("langModalBackdrop").style.display = "none";
+}
+
+function setLanguage(lang) {
+  localStorage.setItem("axiomid_lang", lang);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = (lang === "ar" ? "rtl" : "ltr");
+  
+  ["en", "ar", "zh"].forEach(l => {
+    const opt = document.getElementById("opt-" + l);
+    const chk = document.getElementById("check-" + l);
+    if (opt && chk) {
+      if (l === lang) {
+        opt.classList.add("selected");
+        chk.style.display = "inline";
+      } else {
+        opt.classList.remove("selected");
+        chk.style.display = "none";
+      }
+    }
+  });
+
+  const t = DICT[lang] || DICT.en;
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const key = el.getAttribute("data-i18n");
+    if (t[key]) el.textContent = t[key];
+  });
+  
+  const btnText = document.getElementById("langBtnText");
+  if (btnText) btnText.textContent = t.langBtn;
+
+  closeLangModal();
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const saved = localStorage.getItem("axiomid_lang") || "en";
+  setLanguage(saved);
+});
+</script>`;
 }
 
 /* 1. INDEX MIRROR PAGE (index.axiomid.app) */
