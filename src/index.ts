@@ -39,7 +39,7 @@ export default {
     if (key === "auth") {
       return new Response(getAuthHtml(), { headers: { "Content-Type": "text/html; charset=utf-8" } });
     }
-    if (key === "skills") {
+    if (key === "skills" || key === "mcp") {
       return new Response(getSkillsHtml(), { headers: { "Content-Type": "text/html; charset=utf-8" } });
     }
     if (key === "mail") {
