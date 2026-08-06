@@ -10,6 +10,9 @@
     { "pattern": "jobs.axiomid.app/*", "zone_name": "axiomid.app" },
     { "pattern": "ppp.axiomid.app/*", "zone_name": "axiomid.app" },
     { "pattern": "memory.axiomid.app/*", "zone_name": "axiomid.app" },
-    { "pattern": "skills.axiomid.app/*", "zone_name": "axiomid.app" }
+    { "pattern": "skills.axiomid.app/*", "zone_name": "axiomid.app" },
+    { "pattern": "rewards.axiomid.app/*", "zone_name": "axiomid.app" },
+    { "pattern": "ads.axiomid.app/*", "zone_name": "axiomid.app" },
+    { "pattern": "learn.axiomid.app/*", "zone_name": "axiomid.app" }
   ]
 }

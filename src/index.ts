@@ -42,6 +42,21 @@ const PROTOCOLS = {
     desc: "Agent skill registry and ADP discovery. Capability browsing for the universe.",
     live: ["https://openid.axiomid.app"],
   },
+  rewards: {
+    name: "Rewards — Loop Feedback",
+    desc: "Reputation, XP, and rewards that feed the meta loop. Trust is earned, never inherited.",
+    live: ["https://axiomid.app", "https://openid.axiomid.app"],
+  },
+  ads: {
+    name: "Ads — Attention Economy",
+    desc: "Agentic ads and sponsored discovery funding the labor loop.",
+    live: ["https://axiomid.app"],
+  },
+  learn: {
+    name: "Learn — Discovery & Portability",
+    desc: "Agents and humans discover each other; share PPP packs as plug-ins for any platform or tool.",
+    live: ["https://ppp.axiomid.app", "https://openid.axiomid.app"],
+  },
 } as const;
 
 export default {
