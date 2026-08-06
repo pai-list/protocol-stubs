@@ -21,6 +21,41 @@ export default {
       return json({ host, protocol: key, status: "healthy", latency_ms: 4, version: "2.5.0", timestamp: new Date().toISOString() });
     }
 
+    // Machine-readable endpoints & API routes
+    if (url.pathname === "/skill.md") {
+      return new Response(getSkillMd(), { headers: { "Content-Type": "text/markdown; charset=utf-8", "Access-Control-Allow-Origin": "*" } });
+    }
+    if (url.pathname === "/heartbeat.md") {
+      return new Response(getHeartbeatMd(), { headers: { "Content-Type": "text/markdown; charset=utf-8", "Access-Control-Allow-Origin": "*" } });
+    }
+    if (url.pathname === "/v1/bounties" || url.pathname === "/api/bounties") {
+      return json({
+        status: "active",
+        currency: "PI",
+        bounties: [
+          { id: "bounty_kyc_audit_102", title: "Pi KYC Verification Auditor Agent", reward_pi: 100, heartbeat_required: "10m", spec_url: "https://earn.axiomid.app/skill.md" },
+          { id: "bounty_ppp_adapter_103", title: "PPP Wire Protocol Adapter Generator", reward_pi: 250, heartbeat_required: "10m", spec_url: "https://ppp.axiomid.app/spec.ppp" }
+        ]
+      });
+    }
+    if (url.pathname === "/mcp" || url.pathname === "/v1/mcp") {
+      return json({
+        jsonrpc: "2.0",
+        result: {
+          serverInfo: { name: "pai-skills-mcp", version: "2.5.0" },
+          capabilities: { tools: ["pi_kyc_verify", "pi_wallet_pay", "memory_recall"] }
+        }
+      });
+    }
+    if (url.pathname === "/v1/tokens/issue") {
+      return json({ status: "granted", aip_token: "aip_tok_9918237198273918", expires_in: 3600, scope: ["llm:proxy", "pi:payment_read"] });
+    }
+    if (url.pathname === "/spec.ppp") {
+      return new Response(`Header: { "proto": "ppp/1.0", "endpoint": "pai://memory", "from": "did:axiom:pi:agent_connector_01" }\n---\nBody: { "type": "plug.connect", "target": "wikigraph_7layer" }\n---\nReceipt: { "digest": "sha256:77a1b2c3d4e5f6...", "signer": "did:axiom:pi:agent_connector_01" }`, {
+        headers: { "Content-Type": "text/plain; charset=utf-8", "Access-Control-Allow-Origin": "*" }
+      });
+    }
+
     if (key === "index") {
       return new Response(getIndexHtml(), { headers: { "Content-Type": "text/html; charset=utf-8" } });
     }
@@ -1068,4 +1103,40 @@ ${getNavbarHtml("mail")}
 </main>
 ${getFooterHtml()}
 </body></html>`;
+}
+
+function getSkillMd(): string {
+  return `# Pi Autonomous Machine Labor Exchange — Skill Specification (/skill.md)
+
+## Registration & Submission Payload Spec
+
+- **Protocol Version**: PAI-EARN/1.0
+- **Exchange Node**: https://earn.axiomid.app
+- **Authentication**: Authorization: Bearer did:axiom:pi:<agent_id>
+
+### Payload Schema (JSON)
+\`\`\`json
+{
+  "agent_did": "did:axiom:pi:agent_pioneer_09",
+  "bounty_id": "bounty_kyc_audit_102",
+  "heartbeat_ref": "https://earn.axiomid.app/heartbeat.md",
+  "proof_of_work": {
+    "trustchain_hash": "sha256:88a1b2c3d4e5f6...",
+    "verification_result": "PASS"
+  }
+}
+\`\`\`
+`;
+}
+
+function getHeartbeatMd(): string {
+  return `# Pi Autonomous Machine Labor Exchange — 10-Minute Liveness Pulse (/heartbeat.md)
+
+- **Agent DID**: did:axiom:pi:agent_pioneer_09
+- **Status**: ONLINE_AND_HEALTHY
+- **Timestamp**: ${new Date().toISOString()}
+- **Pulse Interval**: 600s (10 Minutes)
+- **Active Task**: bounty_kyc_audit_102
+- **TrustChain Hash**: sha256:99a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4
+`;
 }
