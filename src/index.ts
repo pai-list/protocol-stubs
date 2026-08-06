@@ -120,9 +120,9 @@ const ENTERPRISE_CSS = `
   a { color: var(--accent-cyan); text-decoration: none; transition: color 0.2s ease; }
   a:hover { color: #fff; text-decoration: none; }
   
-  /* Header Navigation Bar */
+  /* Header Navigation Bar (xmcp.dev Centered Logo Layout) */
   header {
-    background: rgba(2, 6, 23, 0.85);
+    background: rgba(2, 6, 23, 0.88);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border-bottom: 1px solid var(--card-border);
@@ -130,54 +130,66 @@ const ENTERPRISE_CSS = `
     top: 0;
     z-index: 1000;
   }
-  .nav-container {
-    max-width: 1280px;
+  .nav-container-xmcp {
+    max-width: 1380px;
     margin: 0 auto;
-    padding: 1rem 1.5rem;
+    padding: 0.85rem 1.5rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 1.5rem;
+    gap: 1rem;
   }
-  .brand-group {
+  .nav-group-left, .nav-group-right {
     display: flex;
     align-items: center;
     gap: 0.85rem;
-  }
-  .brand-title {
-    font-weight: 800;
-    font-size: 1.2rem;
-    letter-spacing: -0.02em;
-    color: #fff;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-  }
-  .brand-sub {
-    font-size: 0.72rem;
-    font-family: 'Fira Code', monospace;
-    color: var(--accent-purple);
-    background: rgba(192, 132, 252, 0.1);
-    padding: 0.15rem 0.5rem;
-    border-radius: 6px;
-    border: 1px solid rgba(192, 132, 252, 0.2);
-  }
-  .nav-menu {
-    display: flex;
-    gap: 1.25rem;
-    align-items: center;
-    font-size: 0.85rem;
+    font-size: 0.825rem;
     font-weight: 600;
-    flex-wrap: wrap;
+  }
+  .brand-center-group {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    text-decoration: none !important;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    transition: all 0.25s ease;
+  }
+  .brand-center-group:hover {
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.25);
+    transform: translateY(-1px);
+  }
+  .brand-center-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.1;
+  }
+  .brand-name {
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: #fff;
+    letter-spacing: -0.01em;
+  }
+  .brand-sub-pill {
+    font-size: 0.65rem;
+    font-family: 'Fira Code', monospace;
+    color: var(--accent-cyan);
   }
   .nav-item {
     color: var(--text-muted);
     transition: all 0.2s ease;
     padding: 0.35rem 0.65rem;
     border-radius: 8px;
+    white-space: nowrap;
   }
   .nav-item:hover, .nav-item.active {
     color: #fff;
+    background: rgba(255, 255, 255, 0.06);
+  }
     background: rgba(255, 255, 255, 0.05);
   }
   .status-badge {
@@ -381,31 +393,36 @@ const ENTERPRISE_CSS = `
   .footer-links a:hover { color: var(--accent-cyan); }
 `;
 
-/* Unified Top Navigation Component */
+/* Unified Top Navigation Component (xmcp.dev Centered Logo Pattern) */
 function getNavbarHtml(activeKey: string): string {
   return `<header>
-  <div class="nav-container">
-    <div class="brand-group">
-      ${getEnterpriseLogoSvg()}
-      <div class="brand-title">
-        PAI Universe
-        <span class="brand-sub">${activeKey}.axiomid.app</span>
-      </div>
-    </div>
-    <nav class="nav-menu">
+  <div class="nav-container-xmcp">
+    <div class="nav-group-left">
       <a href="https://index.axiomid.app" class="nav-item ${activeKey === "index" ? "active" : ""}">Index Mirror</a>
       <a href="https://axiomid.app" class="nav-item">Identity</a>
-      <a href="https://aip.axiomid.app" class="nav-item ${activeKey === "aip" ? "active" : ""}">AIP Gateway</a>
+      <a href="https://aip.axiomid.app" class="nav-item ${activeKey === "aip" ? "active" : ""}">AIP Vault</a>
       <a href="https://ppp.axiomid.app" class="nav-item ${activeKey === "ppp" ? "active" : ""}">PPP Wire</a>
       <a href="https://memory.axiomid.app" class="nav-item ${activeKey === "memory" ? "active" : ""}">7-Layer Memory</a>
+    </div>
+
+    <!-- Centered Logo (xmcp.dev Pattern) -->
+    <a href="https://${activeKey}.axiomid.app" class="brand-center-group">
+      ${getEnterpriseLogoSvg()}
+      <div class="brand-center-text">
+        <span class="brand-name">PAI MCP</span>
+        <span class="brand-sub-pill">${activeKey}.axiomid.app</span>
+      </div>
+    </a>
+
+    <div class="nav-group-right">
       <a href="https://earn.axiomid.app" class="nav-item ${activeKey === "earn" ? "active" : ""}">Machine Exchange</a>
       <a href="https://auth.axiomid.app" class="nav-item ${activeKey === "auth" ? "active" : ""}">OAuth2 & DID</a>
       <a href="https://skills.axiomid.app" class="nav-item ${activeKey === "skills" ? "active" : ""}">Skills MCP</a>
       <a href="https://mail.axiomid.app" class="nav-item ${activeKey === "mail" ? "active" : ""}">Email Gateway</a>
-    </nav>
-    <div class="status-badge">
-      <span class="status-pulse"></span>
-      LIVE EDGE ENGINE
+      <div class="status-badge">
+        <span class="status-pulse"></span>
+        LIVE EDGE
+      </div>
     </div>
   </div>
 </header>`;
