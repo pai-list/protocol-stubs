@@ -32,6 +32,16 @@ const PROTOCOLS = {
     desc: "Shareable URI for signed, encrypted memory packs. Import/export across platforms.",
     live: ["https://openid.axiomid.app"],
   },
+  memory: {
+    name: "Memory — Context & Ledger",
+    desc: "PAI-Memory: semantic context for agents, evidence storage, append-only records.",
+    live: ["https://openid.axiomid.app", "https://mcp.axiomid.app"],
+  },
+  skills: {
+    name: "Skills — Registry & ABI",
+    desc: "Agent skill registry and ADP discovery. Capability browsing for the universe.",
+    live: ["https://openid.axiomid.app"],
+  },
 } as const;
 
 export default {

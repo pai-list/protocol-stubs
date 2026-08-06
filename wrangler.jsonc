@@ -8,6 +8,8 @@
     { "pattern": "auth.axiomid.app/*", "zone_name": "axiomid.app" },
     { "pattern": "earn.axiomid.app/*", "zone_name": "axiomid.app" },
     { "pattern": "jobs.axiomid.app/*", "zone_name": "axiomid.app" },
-    { "pattern": "ppp.axiomid.app/*", "zone_name": "axiomid.app" }
+    { "pattern": "ppp.axiomid.app/*", "zone_name": "axiomid.app" },
+    { "pattern": "memory.axiomid.app/*", "zone_name": "axiomid.app" },
+    { "pattern": "skills.axiomid.app/*", "zone_name": "axiomid.app" }
   ]
 }
