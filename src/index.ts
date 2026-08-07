@@ -14,7 +14,7 @@
 /** Security headers applied to every response */
 const SECURITY_HEADERS: Record<string, string> = {
   "X-Content-Type-Options": "nosniff",
-  "X-Frame-Options": "DENY",
+  "X-Frame-Options": "SAMEORIGIN",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
@@ -29,6 +29,8 @@ function html(body: string, status = 200): Response {
 
 /** Known subdomain handlers */
 const SUBDOMAIN_HANDLERS: Record<string, () => string> = {
+  "": getAxiomIdHtml,
+  "axiomid.app": getAxiomIdHtml, // Handle double hostname from Cloudflare proxy
   index: getIndexHtml,
   aip: getAipHtml,
   ppp: getPppHtml,
@@ -91,6 +93,31 @@ export default {
       if (url.pathname === "/spec.ppp") {
         return new Response(`Header: { "proto": "ppp/1.0", "endpoint": "pai://memory", "from": "did:axiom:pi:agent_connector_01" }\n---\nBody: { "type": "plug.connect", "target": "wikigraph_7layer" }\n---\nReceipt: { "digest": "sha256:77a1b2c3d4e5f6...", "signer": "did:axiom:pi:agent_connector_01" }`, {
           headers: { "Content-Type": "text/plain; charset=utf-8", "Access-Control-Allow-Origin": "*", ...SECURITY_HEADERS }
+        });
+      }
+
+      // PPP plug-and-play discovery descriptors (USB-standard discovery files)
+      if (url.pathname === "/llms.txt") {
+        return new Response(getLlmstxt(), { headers: { "Content-Type": "text/plain; charset=utf-8", "Access-Control-Allow-Origin": "*", ...SECURITY_HEADERS } });
+      }
+      if (url.pathname === "/agent.json") {
+        return json(getAgentJson());
+      }
+      if (url.pathname === "/agentic.txt") {
+        return new Response(getAgenticTxt(), { headers: { "Content-Type": "text/plain; charset=utf-8", "Access-Control-Allow-Origin": "*", ...SECURITY_HEADERS } });
+      }
+      // Memory store/recall (called by EVE memory subagent over PPP)
+      if (url.pathname === "/v1/memory/store" && request.method === "POST") {
+        return json({ status: "stored", layer: "L4_Working", digest: "sha256:pending-registry", note: "phase-0 stub — wired to pai-memory in Phase 2" });
+      }
+      if (url.pathname === "/v1/memory/recall" && request.method === "POST") {
+        return json({
+          status: "recalled",
+          matches: [
+            { layer: "L1", score: 0.992, content: "KYC UID verified on-chain via Pi Network API" },
+            { layer: "L7", score: 1.000, hash: "sha256:8819283719827..." }
+          ],
+          note: "phase-0 stub — wired to 7-layer store in Phase 2"
         });
       }
 
@@ -567,19 +594,19 @@ function getNavbarHtml(activeKey: string): string {
   return `<header>
   <div class="nav-container-xmcp">
     <div class="nav-group-left">
+      <a href="https://axiomid.app" class="nav-item ${activeKey === "" ? "active" : ""}" data-i18n="universalEntry">Universal Hub</a>
       <a href="https://index.axiomid.app" class="nav-item ${activeKey === "index" ? "active" : ""}" data-i18n="indexMirror">Index Mirror</a>
-      <a href="https://axiomid.app" class="nav-item" data-i18n="identity">Identity</a>
       <a href="https://aip.axiomid.app" class="nav-item ${activeKey === "aip" ? "active" : ""}" data-i18n="aipVault">AIP Vault</a>
       <a href="https://ppp.axiomid.app" class="nav-item ${activeKey === "ppp" ? "active" : ""}" data-i18n="pppWire">PPP Wire</a>
       <a href="https://memory.axiomid.app" class="nav-item ${activeKey === "memory" ? "active" : ""}" data-i18n="memory7">7-Layer Memory</a>
     </div>
 
     <!-- Centered Logo (xmcp.dev Pattern) -->
-    <a href="https://${activeKey}.axiomid.app" class="brand-center-group">
+    <a href="https://axiomid.app" class="brand-center-group">
       ${getEnterpriseLogoSvg()}
       <div class="brand-center-text">
         <span class="brand-name">PAI MCP</span>
-        <span class="brand-sub-pill">${activeKey}.axiomid.app</span>
+        <span class="brand-sub-pill">${activeKey || "root"}.axiomid.app</span>
       </div>
     </a>
 
@@ -610,8 +637,10 @@ function getFooterHtml(): string {
       <p style="line-height:1.6;max-width:280px;" data-i18n="footerDesc">Sovereign AI Agent Architecture for Pi Network. Enterprise-grade identity, key insulation, and wire protocol standards.</p>
     </div>
     <div>
-      <div class="footer-title">Identity & Vault</div>
+      <div class="footer-title">Universal Entry Point</div>
       <div class="footer-links">
+        <a href="https://axiomid.app">🏠 axiomid.app — Universal Hub</a>
+        <a href="https://index.axiomid.app">Index Mirror</a>
         <a href="https://axiomid.app">AxiomID Identity Hub</a>
         <a href="https://aip.axiomid.app">AIP Key Insulation Vault</a>
         <a href="https://auth.axiomid.app">Pi OAuth2 & W3C DID Issuer</a>
@@ -630,7 +659,6 @@ function getFooterHtml(): string {
       <div class="footer-links">
         <a href="https://earn.axiomid.app">Pi Machine Labor Exchange</a>
         <a href="https://mail.axiomid.app">Agentic Email Routing Backbone</a>
-        <a href="https://index.axiomid.app">Central Sitemap Mirror Index</a>
       </div>
     </div>
   </div>
@@ -681,6 +709,7 @@ function getFooterHtml(): string {
 <script>
 const DICT = {
   en: {
+    universalEntry: "Universal Hub",
     indexMirror: "Index Mirror",
     identity: "Identity",
     aipVault: "AIP Vault",
@@ -696,6 +725,7 @@ const DICT = {
     footerDesc: "Sovereign AI Agent Architecture for Pi Network. Enterprise-grade identity, key insulation, and wire protocol standards."
   },
   ar: {
+    universalEntry: "المحور الشامل",
     indexMirror: "مرآة الفهرس",
     identity: "الهوية السيادية",
     aipVault: "خزينة AIP",
@@ -711,6 +741,7 @@ const DICT = {
     footerDesc: "معمارية وكلاء الذكاء الاصطناعي السيادية لشبكة باي. هوية مؤسسية وعزل مفاتيح ومعايير بروتوكولية فائقة الأمان."
   },
   zh: {
+    universalEntry: "通用入口",
     indexMirror: "索引镜像",
     identity: "主权身份",
     aipVault: "AIP 密钥库",
@@ -770,6 +801,209 @@ document.addEventListener("DOMContentLoaded", () => {
   setLanguage(saved);
 });
 </script>`;
+}
+
+/* 0. ROOT AXIOMID.APP — PAI Universal Entry Point (iframe/smart UI for all subdomains) */
+const SUBDOMAINS_CONFIG = [
+  { key: 'index', name: 'Index Mirror', domain: 'https://index.axiomid.app', icon: '📋', iconBg: 'rgba(0,240,255,0.12)', iconColor: 'var(--accent-cyan)' },
+  { key: 'aip', name: 'AIP Vault', domain: 'https://aip.axiomid.app', icon: '🛡️', iconBg: 'rgba(192,132,252,0.12)', iconColor: 'var(--accent-purple)' },
+  { key: 'ppp', name: 'PPP Wire', domain: 'https://ppp.axiomid.app', icon: '🔌', iconBg: 'rgba(45,212,191,0.12)', iconColor: 'var(--accent-emerald)' },
+  { key: 'memory', name: '7-Layer Memory', domain: 'https://memory.axiomid.app', icon: '🔮', iconBg: 'rgba(56,189,248,0.12)', iconColor: 'var(--accent-blue)' },
+  { key: 'earn', name: 'Machine Exchange', domain: 'https://earn.axiomid.app', icon: '⚡', iconBg: 'rgba(251,191,36,0.12)', iconColor: 'var(--accent-amber)' },
+  { key: 'auth', name: 'OAuth2 & DID', domain: 'https://auth.axiomid.app', icon: '🔑', iconBg: 'rgba(244,63,94,0.12)', iconColor: 'var(--accent-rose)' },
+  { key: 'skills', name: 'Skills MCP', domain: 'https://skills.axiomid.app', icon: '🤖', iconBg: 'rgba(0,240,255,0.12)', iconColor: 'var(--accent-cyan)' },
+  { key: 'mail', name: 'Email Gateway', domain: 'https://mail.axiomid.app', icon: '📧', iconBg: 'rgba(168,85,247,0.12)', iconColor: 'var(--accent-purple)' },
+];
+
+function getAxiomIdHtml(): string {
+  const framesHtml = SUBDOMAINS_CONFIG.map(sd => `
+    <div class="subdomain-frame" id="frame-${sd.key}">
+      <div class="subdomain-frame-header">
+        <div class="subdomain-frame-title">
+          <span class="subdomain-frame-icon" style="background:${sd.iconBg};color:${sd.iconColor};">${sd.icon}</span>
+          <span>${sd.name}</span>
+          <span style="font-size:0.7rem;font-family:'Fira Code',monospace;color:var(--text-muted);">${sd.domain}</span>
+        </div>
+        <div class="subdomain-frame-actions">
+          <button class="btn btn-outline btn-sm" onclick="loadFrame('${sd.key}')" id="btn-load-${sd.key}">Load</button>
+          <button class="btn btn-cyan btn-sm" onclick="openInNewTab('${sd.domain}')" style="display:none;" id="btn-open-${sd.key}">Open</button>
+          <button class="btn btn-outline btn-sm" onclick="unloadFrame('${sd.key}')" id="btn-unload-${sd.key}" style="display:none;">Unload</button>
+        </div>
+      </div>
+      <div class="subdomain-frame-content">
+        <div class="loading-state" id="loading-${sd.key}">Click "Load" to initialize ${sd.name}</div>
+        <iframe class="subdomain-iframe" id="iframe-${sd.key}" src="" style="display:none;" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads allow-top-navigation-by-user-activation" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      </div>
+    </div>
+  `).join('');
+
+  return `<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>PAI Universe — axiomid.app</title>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+${ENTERPRISE_CSS}
+.iframe-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+@media (min-width: 1200px) {
+  .iframe-container { grid-template-columns: 1fr 1fr; }
+}
+@media (min-width: 1600px) {
+  .iframe-container { grid-template-columns: 1fr 1fr 1fr; }
+}
+.subdomain-frame {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 500px;
+}
+.subdomain-frame-header {
+  background: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--card-border);
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.subdomain-frame-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 700;
+  font-size: 1rem;
+}
+.subdomain-frame-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.subdomain-frame-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+.btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  border-radius: 0.5rem;
+}
+.subdomain-frame-content {
+  flex: 1;
+  overflow: hidden;
+}
+.subdomain-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: var(--bg);
+}
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+}
+</style>
+</head>
+<body>
+${getNavbarHtml("")}
+<main>
+  <section class="hero-box" style="padding: 2.5rem 2rem;">
+    <span class="hero-tag" style="color:var(--accent-cyan);">PAI Universe Universal Entry Point</span>
+    <h1 class="hero-title">axiomid.app</h1>
+    <p class="hero-desc">Central command hub for all PAI Universe protocol subdomains. Each panel below loads the live subdomain in an isolated iframe with full interactivity. Navigate, authenticate, and operate across the entire agentic OS from one place.</p>
+    <div class="cta-group">
+      <button class="btn btn-cyan" onclick="loadAllFrames()">🔄 Load All Subdomains</button>
+      <button class="btn btn-outline" onclick="unloadAllFrames()">⏹ Unload All</button>
+    </div>
+  </section>
+
+  <div class="iframe-container" id="frames-container">
+    ${framesHtml}
+  </div>
+</main>
+${getFooterHtml()}
+
+<script>
+const SUBDOMAINS = ${JSON.stringify(SUBDOMAINS_CONFIG)};
+
+function loadFrame(key) {
+  const sd = SUBDOMAINS.find(s => s.key === key);
+  if (!sd) return;
+  const iframe = document.getElementById('iframe-' + key);
+  const loading = document.getElementById('loading-' + key);
+  const btnLoad = document.getElementById('btn-load-' + key);
+  const btnOpen = document.getElementById('btn-open-' + key);
+  const btnUnload = document.getElementById('btn-unload-' + key);
+  
+  iframe.src = sd.domain;
+  iframe.style.display = 'block';
+  loading.style.display = 'none';
+  btnLoad.style.display = 'none';
+  btnOpen.style.display = 'inline-flex';
+  btnUnload.style.display = 'inline-flex';
+  
+  iframe.onload = () => {
+    console.log('Loaded:', sd.domain);
+  };
+  iframe.onerror = () => {
+    loading.style.display = 'flex';
+    loading.textContent = 'Failed to load ' + sd.name;
+    iframe.style.display = 'none';
+    btnLoad.style.display = 'inline-flex';
+    btnOpen.style.display = 'none';
+    btnUnload.style.display = 'none';
+  };
+}
+
+function unloadFrame(key) {
+  const iframe = document.getElementById('iframe-' + key);
+  const loading = document.getElementById('loading-' + key);
+  const btnLoad = document.getElementById('btn-load-' + key);
+  const btnOpen = document.getElementById('btn-open-' + key);
+  const btnUnload = document.getElementById('btn-unload-' + key);
+  
+  iframe.src = '';
+  iframe.style.display = 'none';
+  loading.style.display = 'flex';
+  loading.textContent = 'Click "Load" to initialize ' + SUBDOMAINS.find(s => s.key === key)?.name;
+  btnLoad.style.display = 'inline-flex';
+  btnOpen.style.display = 'none';
+  btnUnload.style.display = 'none';
+}
+
+function loadAllFrames() {
+  SUBDOMAINS.forEach(sd => loadFrame(sd.key));
+}
+
+function unloadAllFrames() {
+  SUBDOMAINS.forEach(sd => unloadFrame(sd.key));
+}
+
+function openInNewTab(domain) {
+  window.open(domain, '_blank', 'noopener,noreferrer');
+}
+
+// Auto-load on page load (optional - comment out if you prefer manual)
+document.addEventListener('DOMContentLoaded', () => {
+  // loadAllFrames(); // Uncomment to auto-load all
+});
+</script>
+</body></html>`;
 }
 
 /* 1. INDEX MIRROR PAGE (index.axiomid.app) */
@@ -1411,5 +1645,66 @@ function getHeartbeatMd(): string {
 - **Pulse Interval**: 600s (10 Minutes)
 - **Active Task**: bounty_kyc_audit_102
 - **TrustChain Hash**: sha256:99a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4
+`;
+}
+
+/* PPP plug-and-play discovery descriptors (agentic.txt / llms.txt / agent.json) */
+
+function getAgentJson() {
+  return {
+    name: "pai-universe",
+    protocol: "ppp/1.0",
+    discovery: ["/agentic.txt", "/llms.txt", "/agent.json"],
+    source: "github.com/pai-list/protocol-stubs",
+    universal_entry_point: "https://axiomid.app",
+    subdomains: {
+      "": "https://axiomid.app (Universal Hub — iframe container for all subdomains)",
+      index: "https://index.axiomid.app (Central Mirror Directory)",
+      aip: "https://aip.axiomid.app (Zero Raw Keys Security Gateway)",
+      ppp: "https://ppp.axiomid.app (USB Universal Connector)",
+      memory: "https://memory.axiomid.app (7-Layer Memory Engine)",
+      earn: "https://earn.axiomid.app (Pi Machine Labor Exchange)",
+      auth: "https://auth.axiomid.app (Pi OAuth2 & W3C DID)",
+      skills: "https://skills.axiomid.app (Skills Registry & MCP Server)",
+      mail: "https://mail.axiomid.app (Agentic Email Gateway)",
+    },
+    endpoints: {
+      memory: { recite: "POST /v1/memory/recall", store: "POST /v1/memory/store" },
+      earn: { bounties: "GET /v1/bounties", heartbeat: "GET /heartbeat.md" },
+      mcp: "POST /v1/mcp",
+      tokens: "POST /v1/tokens/issue",
+      spec: "GET /spec.ppp",
+    },
+    status: "scaffold",
+  };
+}
+
+function getLlmstxt(): string {
+  return `# pxp.axiomid.app (protocol-stubs)
+
+> Summary: PAI Universe PPP plug-and-play descriptor for LLM/agent tooling.
+
+- /agent.json — structured capability manifest (JSON)
+- /agentic.txt — agent instructions (markdown)
+- /spec.ppp — 3-section PPP wire format sample
+- /v1/memory/recall — memory RECALL endpoint (POST)
+- /v1/memory/store — memory STORE endpoint (POST)
+- /v1/bounties — earn bounties (GET)
+- /heartbeat.md — 10-min liveness pulse sample
+- /skill.md — machine-labor submission spec
+`;
+}
+
+function getAgenticTxt(): string {
+  return `# PAI Universe — Agent Discovery Descriptor
+
+You are an agent arriving at an unknown PAI subdomain. Start here:
+
+1. Read /llms.txt for the map, /agent.json for the capability manifest.
+2. Direct agent-to-agent messages use the PPP wire format (see /spec.ppp):
+   Header --- Body --- Receipt.
+3. Memory (pai://memory) exposes /v1/memory/store and /v1/memory/recall.
+4. Every claim carries a commit or URL. No claim without a source.
+5. SOUL Protocol applies: truth, accountability, service to humans.
 `;
 }

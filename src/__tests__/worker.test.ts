@@ -150,7 +150,7 @@ describe("protocol-stubs Edge Worker Suite", () => {
       const res = await worker.fetch(req);
 
       expect(res.headers.get("Strict-Transport-Security")).toBe("max-age=31536000; includeSubDomains");
-      expect(res.headers.get("X-Frame-Options")).toBe("DENY");
+      expect(res.headers.get("X-Frame-Options")).toBe("SAMEORIGIN");
       expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
       expect(res.headers.get("Referrer-Policy")).toBe("strict-origin-when-cross-origin");
       expect(res.headers.get("Permissions-Policy")).toBe("camera=(), microphone=(), geolocation=()");
