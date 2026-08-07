@@ -11,85 +11,110 @@
  *   - mail.axiomid.app   (Cloudflare Email Routing Catch-all & Resend API Bridge)
  */
 
+/** Security headers applied to every response */
+const SECURITY_HEADERS: Record<string, string> = {
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+};
+
+function html(body: string, status = 200): Response {
+  return new Response(body, {
+    status,
+    headers: { "Content-Type": "text/html; charset=utf-8", ...SECURITY_HEADERS },
+  });
+}
+
+/** Known subdomain handlers */
+const SUBDOMAIN_HANDLERS: Record<string, () => string> = {
+  index: getIndexHtml,
+  aip: getAipHtml,
+  ppp: getPppHtml,
+  memory: getMemoryHtml,
+  earn: getEarnHtml,
+  auth: getAuthHtml,
+  skills: getSkillsHtml,
+  mcp: getSkillsHtml,
+  mail: getMailHtml,
+};
+
 export default {
   async fetch(request: Request): Promise<Response> {
-    const url = new URL(request.url);
-    const host = url.hostname;
-    const key = host.replace(/\.axiomid\.app$/, "");
+    try {
+      const url = new URL(request.url);
+      const host = url.hostname;
+      const key = host.replace(/\.axiomid\.app$/, "");
 
-    if (url.pathname === "/health") {
-      return json({ host, protocol: key, status: "healthy", latency_ms: 4, version: "2.5.0", timestamp: new Date().toISOString() });
-    }
+      // CORS preflight
+      if (request.method === "OPTIONS") {
+        return new Response(null, {
+          status: 204,
+          headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type", ...SECURITY_HEADERS },
+        });
+      }
 
-    // Machine-readable endpoints & API routes
-    if (url.pathname === "/skill.md") {
-      return new Response(getSkillMd(), { headers: { "Content-Type": "text/markdown; charset=utf-8", "Access-Control-Allow-Origin": "*" } });
-    }
-    if (url.pathname === "/heartbeat.md") {
-      return new Response(getHeartbeatMd(), { headers: { "Content-Type": "text/markdown; charset=utf-8", "Access-Control-Allow-Origin": "*" } });
-    }
-    if (url.pathname === "/v1/bounties" || url.pathname === "/api/bounties") {
-      return json({
-        status: "active",
-        currency: "PI",
-        bounties: [
-          { id: "bounty_kyc_audit_102", title: "Pi KYC Verification Auditor Agent", reward_pi: 100, heartbeat_required: "10m", spec_url: "https://earn.axiomid.app/skill.md" },
-          { id: "bounty_ppp_adapter_103", title: "PPP Wire Protocol Adapter Generator", reward_pi: 250, heartbeat_required: "10m", spec_url: "https://ppp.axiomid.app/spec.ppp" }
-        ]
+      if (url.pathname === "/health") {
+        return json({ host, protocol: key, status: "healthy", latency_ms: 4, version: "3.0.0", timestamp: new Date().toISOString() });
+      }
+
+      // Machine-readable endpoints & API routes
+      if (url.pathname === "/skill.md") {
+        return new Response(getSkillMd(), { headers: { "Content-Type": "text/markdown; charset=utf-8", "Access-Control-Allow-Origin": "*", ...SECURITY_HEADERS } });
+      }
+      if (url.pathname === "/heartbeat.md") {
+        return new Response(getHeartbeatMd(), { headers: { "Content-Type": "text/markdown; charset=utf-8", "Access-Control-Allow-Origin": "*", ...SECURITY_HEADERS } });
+      }
+      if (url.pathname === "/v1/bounties" || url.pathname === "/api/bounties") {
+        return json({
+          status: "active",
+          currency: "PI",
+          bounties: [
+            { id: "bounty_kyc_audit_102", title: "Pi KYC Verification Auditor Agent", reward_pi: 100, heartbeat_required: "10m", spec_url: "https://earn.axiomid.app/skill.md" },
+            { id: "bounty_ppp_adapter_103", title: "PPP Wire Protocol Adapter Generator", reward_pi: 250, heartbeat_required: "10m", spec_url: "https://ppp.axiomid.app/spec.ppp" }
+          ]
+        });
+      }
+      if (url.pathname === "/mcp" || url.pathname === "/v1/mcp") {
+        return json({
+          jsonrpc: "2.0",
+          result: {
+            serverInfo: { name: "pai-skills-mcp", version: "3.0.0" },
+            capabilities: { tools: ["pi_kyc_verify", "pi_wallet_pay", "memory_recall"] }
+          }
+        });
+      }
+      if (url.pathname === "/v1/tokens/issue") {
+        return json({ status: "granted", aip_token: "aip_tok_9918237198273918", expires_in: 3600, scope: ["llm:proxy", "pi:payment_read"] });
+      }
+      if (url.pathname === "/spec.ppp") {
+        return new Response(`Header: { "proto": "ppp/1.0", "endpoint": "pai://memory", "from": "did:axiom:pi:agent_connector_01" }\n---\nBody: { "type": "plug.connect", "target": "wikigraph_7layer" }\n---\nReceipt: { "digest": "sha256:77a1b2c3d4e5f6...", "signer": "did:axiom:pi:agent_connector_01" }`, {
+          headers: { "Content-Type": "text/plain; charset=utf-8", "Access-Control-Allow-Origin": "*", ...SECURITY_HEADERS }
+        });
+      }
+
+      // Subdomain HTML routing
+      const handler = SUBDOMAIN_HANDLERS[key];
+      if (handler) {
+        return html(handler());
+      }
+
+      // 404 for unrecognized subdomains
+      return html(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>404 — PAI Universe</title><style>body{background:#020617;color:#e2e8f0;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}div{text-align:center}h1{font-size:4rem;color:#00f0ff;margin-bottom:1rem}p{color:#94a3b8}a{color:#00f0ff;text-decoration:none}a:hover{text-decoration:underline}</style></head><body><div><h1>404</h1><p>Unknown protocol subdomain: <strong>${key}.axiomid.app</strong></p><p><a href="https://index.axiomid.app">← Return to PAI Index</a></p></div></body></html>`, 404);
+    } catch (err) {
+      return new Response(JSON.stringify({ error: "Internal Server Error", message: err instanceof Error ? err.message : "Unknown error" }), {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...SECURITY_HEADERS },
       });
     }
-    if (url.pathname === "/mcp" || url.pathname === "/v1/mcp") {
-      return json({
-        jsonrpc: "2.0",
-        result: {
-          serverInfo: { name: "pai-skills-mcp", version: "2.5.0" },
-          capabilities: { tools: ["pi_kyc_verify", "pi_wallet_pay", "memory_recall"] }
-        }
-      });
-    }
-    if (url.pathname === "/v1/tokens/issue") {
-      return json({ status: "granted", aip_token: "aip_tok_9918237198273918", expires_in: 3600, scope: ["llm:proxy", "pi:payment_read"] });
-    }
-    if (url.pathname === "/spec.ppp") {
-      return new Response(`Header: { "proto": "ppp/1.0", "endpoint": "pai://memory", "from": "did:axiom:pi:agent_connector_01" }\n---\nBody: { "type": "plug.connect", "target": "wikigraph_7layer" }\n---\nReceipt: { "digest": "sha256:77a1b2c3d4e5f6...", "signer": "did:axiom:pi:agent_connector_01" }`, {
-        headers: { "Content-Type": "text/plain; charset=utf-8", "Access-Control-Allow-Origin": "*" }
-      });
-    }
-
-    if (key === "index") {
-      return new Response(getIndexHtml(), { headers: { "Content-Type": "text/html; charset=utf-8" } });
-    }
-    if (key === "aip") {
-      return new Response(getAipHtml(), { headers: { "Content-Type": "text/html; charset=utf-8" } });
-    }
-    if (key === "ppp") {
-      return new Response(getPppHtml(), { headers: { "Content-Type": "text/html; charset=utf-8" } });
-    }
-    if (key === "memory") {
-      return new Response(getMemoryHtml(), { headers: { "Content-Type": "text/html; charset=utf-8" } });
-    }
-    if (key === "earn") {
-      return new Response(getEarnHtml(), { headers: { "Content-Type": "text/html; charset=utf-8" } });
-    }
-    if (key === "auth") {
-      return new Response(getAuthHtml(), { headers: { "Content-Type": "text/html; charset=utf-8" } });
-    }
-    if (key === "skills" || key === "mcp") {
-      return new Response(getSkillsHtml(), { headers: { "Content-Type": "text/html; charset=utf-8" } });
-    }
-    if (key === "mail") {
-      return new Response(getMailHtml(), { headers: { "Content-Type": "text/html; charset=utf-8" } });
-    }
-
-    // Default fallback page -> central index mirror
-    return new Response(getIndexHtml(), { headers: { "Content-Type": "text/html; charset=utf-8" } });
   },
 };
 
 function json(value: unknown, status = 200): Response {
   return new Response(JSON.stringify(value), {
     status,
-    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*", ...SECURITY_HEADERS },
   });
 }
 
@@ -139,6 +164,8 @@ const ENTERPRISE_CSS = `
     --radius-xl: 1.75rem;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  :focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 2px; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 2px; }
   body {
     background: var(--bg);
     background-image: var(--bg-mesh);
@@ -224,8 +251,6 @@ const ENTERPRISE_CSS = `
   .nav-item:hover, .nav-item.active {
     color: #fff;
     background: rgba(255, 255, 255, 0.06);
-  }
-    background: rgba(255, 255, 255, 0.05);
   }
   .status-badge {
     background: rgba(45, 212, 191, 0.1);
@@ -432,7 +457,7 @@ const ENTERPRISE_CSS = `
     font-weight: 700;
     font-size: 0.925rem;
     cursor: pointer;
-    transition: all 0.25 ease;
+    transition: all 0.25s ease;
     border: none;
   }
   .btn-cyan {
@@ -456,7 +481,7 @@ const ENTERPRISE_CSS = `
 
   /* Grid Layouts */
   .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1.5rem; }
-  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 1.5rem; }
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
 
   .card-tile {
     background: var(--card-bg);
