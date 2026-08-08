@@ -1117,7 +1117,7 @@ ${ENTERPRISE_CSS}
 </section>
 
 <div class="ax-ticker" aria-hidden="true"><div class="ax-ticker-track">
-  ${ALL_SERVICES.map(sd => `<span>${sd.name}</span>`).join('')}
+  ${[...ALL_SERVICES, ...ALL_SERVICES].map(sd => `<span>${sd.name}</span>`).join('')}
   <b>governed by humans</b><span>·</span><b>machines never lie when the wire is honest</b><span>·</span><b>Pi Network</b><span>·</span><b>edge-first</b><span>·</span>
 </div></div>
 
