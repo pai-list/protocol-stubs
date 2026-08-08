@@ -14,8 +14,7 @@
 /** Security headers applied to every response */
 const SECURITY_HEADERS: Record<string, string> = {
   "X-Content-Type-Options": "nosniff",
-  "X-Frame-Options": "ALLOW-FROM https://axiomid.app",
-  "Content-Security-Policy": "frame-ancestors https://axiomid.app",
+  "Content-Security-Policy": "frame-ancestors 'self' https://axiomid.app https://*.axiomid.app",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
@@ -58,6 +57,24 @@ export default {
         return new Response(null, {
           status: 204,
           headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type", ...SECURITY_HEADERS },
+        });
+      }
+
+      // Dynamic OG images: proxy to the AxiomID Next.js app (Vercel) — the
+      // apex host is a worker, so /api/og must cross the wire explicitly.
+      if (url.pathname === "/api/og") {
+        const vercel = "https://axiomid-34uenxj9l-axiom-id.vercel.app";
+        const upstream = await fetch(vercel + url.pathname + url.search, {
+          headers: { "User-Agent": request.headers.get("User-Agent") ?? "cloudflare-worker" },
+        });
+        const blob = await upstream.arrayBuffer();
+        return new Response(blob, {
+          status: upstream.status,
+          headers: {
+            "Content-Type": upstream.headers.get("Content-Type") ?? "image/png",
+            "Cache-Control": "public, max-age=86400, s-maxage=604800",
+            ...SECURITY_HEADERS,
+          },
         });
       }
 
