@@ -37,7 +37,7 @@ describe("protocol-stubs Edge Worker Suite", () => {
       expect(res.status).toBe(200);
       expect(res.headers.get("Content-Type")).toContain("application/json");
 
-      const json = await res.json();
+      const json = await res.json() as Record<string, unknown>;
       expect(json).toMatchObject({
         host: "index.axiomid.app",
         protocol: "index",
@@ -79,7 +79,7 @@ describe("protocol-stubs Edge Worker Suite", () => {
         expect(res.status).toBe(200);
         expect(res.headers.get("Content-Type")).toContain("application/json");
 
-        const json = await res.json();
+const json = await res.json() as { status: string; currency: string; bounties: Array<Record<string, unknown>> };
         expect(json.status).toBe("active");
         expect(json.currency).toBe("PI");
         expect(Array.isArray(json.bounties)).toBe(true);
@@ -96,7 +96,7 @@ describe("protocol-stubs Edge Worker Suite", () => {
         expect(res.status).toBe(200);
         expect(res.headers.get("Content-Type")).toContain("application/json");
 
-        const json = await res.json();
+        const json = await res.json() as { jsonrpc: string; result: { serverInfo: { name: string }; capabilities: { tools: unknown[] } } };
         expect(json.jsonrpc).toBe("2.0");
         expect(json.result.serverInfo.name).toBe("pai-skills-mcp");
         expect(json.result.capabilities.tools).toContain("pi_kyc_verify");
@@ -110,7 +110,7 @@ describe("protocol-stubs Edge Worker Suite", () => {
       expect(res.status).toBe(200);
       expect(res.headers.get("Content-Type")).toContain("application/json");
 
-      const json = await res.json();
+      const json = await res.json() as { status: string; aip_token: string; expires_in: number };
       expect(json.status).toBe("granted");
       expect(json.aip_token).toMatch(/^aip_tok_/);
       expect(json.expires_in).toBe(3600);
@@ -145,12 +145,13 @@ describe("protocol-stubs Edge Worker Suite", () => {
   });
 
   describe("Security Headers & Preflight Requests", () => {
-    it("should include HSTS, X-Frame-Options, and nosniff headers on responses", async () => {
+    it("should include HSTS, frame-ancestors CSP, and nosniff headers on responses", async () => {
       const req = new Request("https://index.axiomid.app/");
       const res = await worker.fetch(req);
 
       expect(res.headers.get("Strict-Transport-Security")).toBe("max-age=31536000; includeSubDomains");
-      expect(res.headers.get("X-Frame-Options")).toBe("SAMEORIGIN");
+      expect(res.headers.get("Content-Security-Policy")).toContain("frame-ancestors 'self' https://axiomid.app https://*.axiomid.app");
+      expect(res.headers.get("X-Frame-Options")).toBeNull();
       expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
       expect(res.headers.get("Referrer-Policy")).toBe("strict-origin-when-cross-origin");
       expect(res.headers.get("Permissions-Policy")).toBe("camera=(), microphone=(), geolocation=()");
