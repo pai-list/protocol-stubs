@@ -14,7 +14,8 @@
 /** Security headers applied to every response */
 const SECURITY_HEADERS: Record<string, string> = {
   "X-Content-Type-Options": "nosniff",
-  "X-Frame-Options": "SAMEORIGIN",
+  "X-Frame-Options": "ALLOW-FROM https://axiomid.app",
+  "Content-Security-Policy": "frame-ancestors https://axiomid.app",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
@@ -30,7 +31,7 @@ function html(body: string, status = 200): Response {
 /** Known subdomain handlers */
 const SUBDOMAIN_HANDLERS: Record<string, () => string> = {
   "": getAxiomIdHtml,
-  "axiomid.app": getAxiomIdHtml, // Handle double hostname from Cloudflare proxy
+  "axiomid.app": getAxiomIdHtml,
   index: getIndexHtml,
   aip: getAipHtml,
   ppp: getPppHtml,
@@ -40,6 +41,9 @@ const SUBDOMAIN_HANDLERS: Record<string, () => string> = {
   skills: getSkillsHtml,
   mcp: getSkillsHtml,
   mail: getMailHtml,
+  harness: getHarnessHtml,
+  node: getNodeHtml,
+  learn: getLearnHtml,
 };
 
 export default {
@@ -106,6 +110,34 @@ export default {
       if (url.pathname === "/agentic.txt") {
         return new Response(getAgenticTxt(), { headers: { "Content-Type": "text/plain; charset=utf-8", "Access-Control-Allow-Origin": "*", ...SECURITY_HEADERS } });
       }
+      if (url.pathname === "/sitemap.xml") {
+        const urls = ["", "index", "aip", "ppp", "memory", "earn", "auth", "skills", "mail", "harness", "node", "jobs", "rewards", "ads", "learn"]
+          .map(k => `  <url><loc>https://${k ? k + "." : ""}axiomid.app/</loc><changefreq>weekly</changefreq><priority>${k === "" ? "1.0" : "0.8"}</priority></url>`)
+          .join("\n");
+        return new Response(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`, {
+          headers: { "Content-Type": "application/xml; charset=utf-8", "Access-Control-Allow-Origin": "*", ...SECURITY_HEADERS },
+        });
+      }
+
+      // CaaS: standard MCP discovery (.well-known/mcp.json)
+      if (url.pathname === "/.well-known/mcp.json" || url.pathname === "/mcp.json") {
+        return json(getMcpDiscovery(host));
+      }
+
+      // CaaS: agent/human content negotiation — agents get JSON, browsers get HTML
+      if (url.pathname === "/" || url.pathname === "") {
+        const accepts = request.headers.get("Accept") || "";
+        const wantsMcp = accepts.includes("application/mcp+json") || accepts.includes("application/json") || url.searchParams.get("mcp") === "1";
+        if (wantsMcp) {
+          return json({
+            protocol: key === "" ? "axiomid" : key,
+            host,
+            agent: getMcpDiscovery(host),
+            context_hint: "Session context available at /v1/memory/recall (bitemporal). For full page go to https://" + host + "/",
+          });
+        }
+      }
+
       // Memory store/recall (called by EVE memory subagent over PPP)
       if (url.pathname === "/v1/memory/store" && request.method === "POST") {
         return json({ status: "stored", layer: "L4_Working", digest: "sha256:pending-registry", note: "phase-0 stub — wired to pai-memory in Phase 2" });
@@ -143,6 +175,56 @@ function json(value: unknown, status = 200): Response {
     status,
     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*", ...SECURITY_HEADERS },
   });
+}
+
+/* SEO/GEO: JSON-LD entity grounding for the hub (schema.org Organization + WebSite) */
+function getSeoSchema(kind: string): Record<string, unknown> {
+  const org = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": "https://axiomid.app/#org",
+    name: "PAI Universe / AxiomID",
+    url: "https://axiomid.app",
+    description: "Sovereign AI-agent identity, skills, and wire-protocol infrastructure on the Pi Network.",
+    sameAs: [
+      "https://github.com/pai-list",
+      "https://node.axiomid.app",
+      "https://skills.axiomid.app",
+    ],
+  };
+  const website = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": "https://axiomid.app/#website",
+    url: "https://axiomid.app/",
+    name: "PAI Universe — axiomid.app",
+    publisher: { "@id": "https://axiomid.app/#org" },
+    inLanguage: ["en", "ar", "zh", "hi"],
+  };
+  return kind === "hub" ? [org, website] : org;
+}
+
+/* CaaS discovery: /.well-known/mcp.json — standard MCP server discovery for any host */
+function getMcpDiscovery(baseHost = "axiomid.app"): Record<string, unknown> {
+  return {
+    name: `pai-universe-${baseHost.replace(/\.axiomid\.app$/, "") || "hub"}`,
+    version: "3.0.0",
+    protocol: "publicmcp",
+    capabilities: { tools: true, resources: true, context: true },
+    servers: [
+      {
+        name: "pai-hub",
+        url: `https://${baseHost}/mcp`,
+        tools: [
+          { name: "pi_kyc_verify", description: "Verify Pi KYC UID evidence", inputSchema: { type: "object", properties: { uid: { type: "string" } }, required: ["uid"] }, fuel: { rate: 0.01, currency: "PI", cap_per_turn: 0.05 } },
+          { name: "pi_wallet_pay", description: "Pay an agent via Pi", inputSchema: { type: "object", properties: { to: { type: "string" }, memo: { type: "string" } }, required: ["to"] }, fuel: { rate: 0.1, currency: "PI", cap_per_turn: 1.0 } },
+          { name: "memory_recall", description: "Bitemporal memory query", inputSchema: { type: "object", properties: { query: { type: "string" } }, required: ["query"] }, fuel: { rate: 0.01, currency: "PI", cap_per_turn: 0.1 } },
+          { name: "context_get", description: "CaaS: fetch session context at session start", inputSchema: { type: "object", properties: { session: { type: "string" } } }, fuel: { rate: 0.0, currency: "PI", cap_per_turn: 0.0 } },
+        ],
+      },
+    ],
+    verification: { registry: "https://publicmcp.org", status: "pending" },
+  };
 }
 
 /* Enterprise SVG Logo Generator */
@@ -599,6 +681,7 @@ function getNavbarHtml(activeKey: string): string {
       <a href="https://aip.axiomid.app" class="nav-item ${activeKey === "aip" ? "active" : ""}" data-i18n="aipVault">AIP Vault</a>
       <a href="https://ppp.axiomid.app" class="nav-item ${activeKey === "ppp" ? "active" : ""}" data-i18n="pppWire">PPP Wire</a>
       <a href="https://memory.axiomid.app" class="nav-item ${activeKey === "memory" ? "active" : ""}" data-i18n="memory7">7-Layer Memory</a>
+      <a href="https://node.axiomid.app" class="nav-item ${activeKey === "node" ? "active" : ""}" data-i18n="nodePort">Node Port</a>
     </div>
 
     <!-- Centered Logo (xmcp.dev Pattern) -->
@@ -615,6 +698,7 @@ function getNavbarHtml(activeKey: string): string {
       <a href="https://auth.axiomid.app" class="nav-item ${activeKey === "auth" ? "active" : ""}" data-i18n="oauthDid">OAuth2 & DID</a>
       <a href="https://skills.axiomid.app" class="nav-item ${activeKey === "skills" ? "active" : ""}" data-i18n="skillsMcp">Skills MCP</a>
       <a href="https://mail.axiomid.app" class="nav-item ${activeKey === "mail" ? "active" : ""}" data-i18n="emailGateway">Email Gateway</a>
+      <a href="https://harness.axiomid.app" class="nav-item ${activeKey === "harness" ? "active" : ""}" data-i18n="harnessForge">The Forge</a>
       <button class="lang-btn" onclick="openLangModal()" id="langTriggerBtn" aria-label="Select Protocol Language">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
         <span id="langBtnText">🌐 Language</span>
@@ -715,10 +799,12 @@ const DICT = {
     aipVault: "AIP Vault",
     pppWire: "PPP Wire",
     memory7: "7-Layer Memory",
+    nodePort: "Node Port",
     machineExchange: "Machine Exchange",
     oauthDid: "OAuth2 & DID",
     skillsMcp: "Skills MCP",
     emailGateway: "Email Gateway",
+    harnessForge: "The Forge",
     liveEdge: "LIVE EDGE",
     langBtn: "🌐 Language",
     footerTitle: "PAI Universe Subdomain Mirror",
@@ -731,10 +817,12 @@ const DICT = {
     aipVault: "خزينة AIP",
     pppWire: "سلك PPP",
     memory7: "الذاكرة سباعية الطبقات",
+    nodePort: "منفذ العقدة",
     machineExchange: "بورصة الآلات",
     oauthDid: "مصادقة OAuth2 و DID",
     skillsMcp: "مخدم المهارات MCP",
     emailGateway: "بوابة البريد",
+    harnessForge: "المسبك",
     liveEdge: "البث الحي",
     langBtn: "🌐 العربية (🇸🇦)",
     footerTitle: "مرآة النطاقات الفرعية لكون PAI",
@@ -747,14 +835,34 @@ const DICT = {
     aipVault: "AIP 密钥库",
     pppWire: "PPP 总线",
     memory7: "7层记忆引擎",
+    nodePort: "节点端口",
     machineExchange: "机器劳务交易所",
     oauthDid: "OAuth2 与 DID",
     skillsMcp: "技能 MCP 服务器",
     emailGateway: "智能邮件网关",
+    harnessForge: "熔炉",
     liveEdge: "实时边缘",
     langBtn: "🌐 简体中文 (🇨🇳)",
     footerTitle: "PAI 宇宙子域名镜像目录",
     footerDesc: "Pi Network 主权 AI 智能体架构。企业级身份认证、密钥隔离与通信总线协议标准。"
+  },
+  hi: {
+    universalEntry: "सार्वभौमिक हब",
+    indexMirror: "इंडेक्स मिरर",
+    identity: "पहचान",
+    aipVault: "AIP वॉल्ट",
+    pppWire: "PPP वायर",
+    memory7: "7-लेयर मेमोरी",
+    nodePort: "नोड पोर्ट",
+    machineExchange: "मशीन एक्सचेंज",
+    oauthDid: "OAuth2 और DID",
+    skillsMcp: "स्किल्स MCP",
+    emailGateway: "ईमेल गेटवे",
+    harnessForge: "द फोर्ज",
+    liveEdge: "लाइव एज",
+    langBtn: "🌐 हिंदी (🇮🇳)",
+    footerTitle: "PAI यूनिवर्स सबडोमेन मिरर",
+    footerDesc: "पाई नेटवर्क के लिए संप्रभु एआई एजेंट आर्किटेक्चर। एंटरप्राइज-ग्रेड आइडेंटिटी, की इंसुलेशन, और वायर प्रोटोकॉल स्टैंडर्ड।"
   }
 };
 
@@ -841,7 +949,13 @@ function getAxiomIdHtml(): string {
 <html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>PAI Universe — axiomid.app</title>
+<title>PAI Universe — Sovereign AI Agent Protocol on Pi Network | axiomid.app</title>
+<meta name="description" content="PAI Universe: sovereign AI-agent identity (W3C DID), passport, skill registry, memory (mem7), wire protocols (PPP/AIP), and the Pi Network Agentic Skills marketplace — all hosted edge-first on axiomid.app."/>
+<meta name="keywords" content="Pi Network, AI agents, W3C DID, agent identity, decentralized identity, MCP server, AI skills marketplace, AxiomID, sovereign AI, agent passport"/>
+<link rel="canonical" href="https://axiomid.app/"/>
+<link rel="alternate" type="text/plain" href="/llms.txt" title="Machine-readable site index (LLM)"/>
+<link rel="alternate" type="application/json" href="/agent.json" title="Agent JSON (GEO)"/>
+<script type="application/ld+json">${JSON.stringify(getSeoSchema("hub"))}</script>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 ${ENTERPRISE_CSS}
@@ -1003,6 +1117,191 @@ document.addEventListener('DOMContentLoaded', () => {
   // loadAllFrames(); // Uncomment to auto-load all
 });
 </script>
+</body></html>`;
+}
+
+function getNodeHtml(): string {
+  return `<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Node Port — Agent Node Registry (node.axiomid.app)</title>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>${ENTERPRISE_CSS}</style>
+</head>
+<body>
+${getNavbarHtml("node")}
+<main>
+  <section class="hero-box">
+    <span class="hero-tag" style="color:var(--accent-cyan);">Sub-Agent Uplink</span>
+    <h1 class="hero-title">Node Port — Agent Node Registry</h1>
+    <p class="hero-desc">Every agent, skill, and memory layer exposes a <strong>node</strong> here: a DID-addressed endpoint that inherits the PAI Universal Hub's iframe security headers and CaaS discovery (<code>/.well-known/mcp.json</code>).</p>
+    <div class="cta-group">
+      <a href="https://axiomid.app/passport/node" class="btn btn-cyan">Passport Node</a>
+      <a href="https://index.axiomid.app" class="btn btn-outline">Protocol Index</a>
+    </div>
+  </section>
+
+  <div class="grid-3">
+    <div class="card-tile">
+      <div class="tile-icon" style="background:rgba(0,240,255,0.12);color:var(--accent-cyan);">🖧</div>
+      <h3 class="tile-title">DID-Addressed Nodes</h3>
+      <p class="tile-desc">Each node is a W3C DID (<code>did:axiom:pi:...</code>) — identity, capabilities, and fuel policy resolvable at the edge.</p>
+    </div>
+    <div class="card-tile">
+      <div class="tile-icon" style="background:rgba(192,132,252,0.12);color:var(--accent-purple);">🔌</div>
+      <h3 class="tile-title">Universal Plug</h3>
+      <p class="tile-desc">Any agent is one plug away: <code>wire</code>, <code>plug</code>, <code>bind</code> handshakes over PPP wire to the harness and memory layers.</p>
+    </div>
+    <div class="card-tile">
+      <div class="tile-icon" style="background:rgba(251,191,36,0.12);color:var(--accent-amber);">⚡</div>
+      <h3 class="tile-title">Fuel Gauge</h3>
+      <p class="tile-desc">Every capability import is fuel-metered (PI), capped per turn, and audited on the TrustChain ledger.</p>
+    </div>
+  </div>
+
+  <section class="code-box" id="registry">
+    <div class="code-bar">
+      <span>NODE REGISTRY / L4 WORKING</span>
+      <span>PPP / JSON</span>
+    </div>
+    <pre class="code-content">$ plug connect --target node:agent_connector_01
+{"proto":"ppp/1.0","node":"node.axiomid.app","did":"did:axiom:pi:agent_connector_01","capabilities":["pi_kyc_verify","pi_wallet_pay","memory_recall"],"fuel":{"limit_pi_per_turn":0.05},"signer":"did:axiom:pi:agent_connector_01"}</pre>
+  </section>
+</main>
+${getFooterHtml()}
+</body>
+</html>`;
+}
+
+/* HARNESS PAGE (harness.axiomid.app) — The Forge: Evals, Sandboxes, Verification */
+function getHarnessHtml(): string {
+  return `<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Harness — The Forge (harness.axiomid.app)</title>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>${ENTERPRISE_CSS}</style>
+</head>
+<body>
+${getNavbarHtml("harness")}
+<main>
+  <section class="hero-box">
+    <span class="hero-tag" style="color:var(--accent-amber);">The Forge</span>
+    <h1 class="hero-title">Harness — Evals, Sandboxes, Verification</h1>
+    <p class="hero-desc">Where every loop in the org gets tested before it ships: evals, sandboxes, verification, and the centerboard loop itself. Anything that repeats (cron, heartbeat, gate, deploy) runs through here first.</p>
+    <div class="cta-group">
+      <a href="#evals" class="btn btn-cyan">View Eval Suites</a>
+      <a href="#sandboxes" class="btn btn-outline">Sandbox Runtimes</a>
+    </div>
+  </section>
+
+  <div class="grid-3">
+    <a href="#evals" class="card-tile">
+      <div class="tile-icon" style="background:rgba(251,191,36,0.12);color:var(--accent-amber);">🧪</div>
+      <h3 class="tile-title">Eval Suites</h3>
+      <p class="tile-desc">Automated test batteries for every subagent: truth-check, doc-intel, centerboard, skills.json schema, security gates.</p>
+    </a>
+    <a href="#sandboxes" class="card-tile">
+      <div class="tile-icon" style="background:rgba(192,132,252,0.12);color:var(--accent-purple);">🏖️</div>
+      <h3 class="tile-title">Sandbox Runtimes</h3>
+      <p class="tile-desc">Vercel Sandbox, Cloudflare workerd, QuickJS-WASI — isolated execution environments for untrusted code.</p>
+    </a>
+    <a href="#verification" class="card-tile">
+      <div class="tile-icon" style="background:rgba(45,212,191,0.12);color:var(--accent-emerald);">✅</div>
+      <h3 class="tile-title">Verification Gates</h3>
+      <p class="tile-desc">Truth-check (score < 0.6 blocks Live), Doc-intel (no claim without commit), SOUL Protocol compliance.</p>
+    </a>
+    <a href="#centerboard" class="card-tile">
+      <div class="tile-icon" style="background:rgba(0,240,255,0.12);color:var(--accent-cyan);">📋</div>
+      <h3 class="tile-title">Centerboard Loop</h3>
+      <p class="tile-desc">Nightly heartbeat: reads centerboard.md, improves it, writes date. If quiet > 2d → gate FAILS.</p>
+    </a>
+  </div>
+
+  <section class="code-box" id="evals">
+    <div class="code-bar">
+      <span>EVAL SUITES REGISTRY</span>
+      <span>scripts/truth-check.mjs</span>
+    </div>
+    <div class="code-content">
+<span style="color:var(--accent-amber);">// Truth Check — Integrity Gate</span>
+<span style="color:var(--accent-cyan);">node scripts/truth-check.mjs</span>
+
+<span style="color:var(--accent-purple);">Assertions:</span>
+- agent registry matches deployed subdomains
+- skills.json schema valid (4 Pi + 6 AI skills)
+- centerboard heartbeat fresh (< 24h)
+- doc-intel: all claims trace to commit/URL
+- security: no raw keys, X-Frame-Options SAMEORIGIN
+- i18n: EN/AR/ZH/HI present on all pages
+
+<span style="color:var(--accent-purple);">Gate:</span> score < 0.6 → blocks Live deployment
+    </div>
+  </section>
+
+  <section class="code-box" id="sandboxes">
+    <div class="code-bar">
+      <span>SANDBOX RUNTIMES</span>
+      <span>Isolated Execution Environments</span>
+    </div>
+    <div class="code-content">
+<span style="color:var(--accent-purple);">// Vercel Sandbox (Next.js apps)</span>
+<span style="color:var(--accent-cyan);">npx @vercel/sandbox create --template nextjs</span>
+
+<span style="color:var(--accent-purple);">// Cloudflare workerd (Workers)</span>
+<span style="color:var(--accent-cyan);">npx wrangler dev --test-scheduled</span>
+
+<span style="color:var(--accent-purple);">// QuickJS-WASI (untrusted JS)</span>
+<span style="color:var(--accent-cyan);">npx quickjs-wasi eval 'console.log("hello")'</span>
+
+<span style="color:var(--accent-purple);">// Native: node --test</span>
+<span style="color:var(--accent-cyan);">node --test scripts/*.test.mjs</span>
+    </div>
+  </section>
+
+  <section class="code-box" id="verification">
+    <div class="code-bar">
+      <span>VERIFICATION GATES (SOUL Protocol)</span>
+      <span>Muraqabah · Tawbah · Sidq · Rahma · Shura</span>
+    </div>
+    <div class="code-content">
+<span style="color:var(--accent-purple);">// Muraqabah</span> Private = Public behavior
+<span style="color:var(--accent-purple);">// Tawbah</span> Admit bugs → Repair → Learn → Strengthen
+<span style="color:var(--accent-purple);">// Sidq</span> "I don't know" is honorable; no claim without commit
+<span style="color:var(--accent-purple);">// Rahma</span> Serve humans with mercy, not exploitation
+<span style="color:var(--accent-purple);">// Shura</span> Consult founder on major decisions
+
+<span style="color:var(--accent-cyan);">Automated checks:</span> truth-check.mjs · doc-intel.mjs · centerboard.mjs
+    </div>
+  </section>
+
+  <section class="code-box" id="centerboard">
+    <div class="code-bar">
+      <span>CENTERBOARD LOOP (nightly cron)</span>
+      <span>scripts/centerboard.mjs</span>
+    </div>
+    <div class="code-content">
+<span style="color:var(--accent-purple);">// 1. Read centerboard.md</span>
+<span style="color:var(--accent-cyan);">const board = await readFile('centerboard.md')</span>
+
+<span style="color:var(--accent-purple);">// 2. Verify all 9 sections present</span>
+<span style="color:var(--accent-cyan);">assert(sections.length === 9)</span>
+
+<span style="color:var(--accent-purple);">// 3. Check heartbeat</span>
+<span style="color:var(--accent-cyan);">if (daysSinceLastPulse > 2) FAIL('gate: quiet > 2d')</span>
+
+<span style="color:var(--accent-purple);">// 4. Improve board (AI-assisted)</span>
+<span style="color:var(--accent-cyan);">const improved = await llm.improve(board)</span>
+
+<span style="color:var(--accent-purple);">// 5. Write with new date + pulse++</span>
+<span style="color:var(--accent-cyan);">await writeFile('centerboard.md', improved)</span>
+<span style="color:var(--accent-cyan);">await commit('chore: centerboard heartbeat')</span>
+    </div>
+  </section>
+</main>
+${getFooterHtml()}
 </body></html>`;
 }
 
@@ -1353,6 +1652,81 @@ ${getFooterHtml()}
 }
 
 /* 5. EARN PAGE (earn.axiomid.app) — Machine Labor Exchange */
+/* 5. EARN PAGE (earn.axiomid.app) — Machine Labor Exchange */
+function getLearnHtml(): string {
+  return `<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Learn — PAI Protocol Academy (learn.axiomid.app)</title>
+<meta name="description" content="The PAI Protocol Academy: structured tracks for agents and humans — PPP Wire, AIP Key Vault, CaaS context serving, MCP discovery. Completing tracks unlocks Machine Exchange bounty tiers."/>
+<link rel="canonical" href="https://learn.axiomid.app/"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700;800&display=swap">
+<style>
+  ${ENTERPRISE_CSS}
+  .track-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    transition: all 0.25s ease;
+  }
+  .track-card:hover { border-color: rgba(0,240,255,0.4); transform: translateY(-2px); }
+  .track-level {
+    font-family:'Fira Code',monospace; font-size:0.75rem; color:var(--accent-cyan);
+    text-transform:uppercase; letter-spacing:0.08em;
+  }
+  .progress-track { display:flex; gap:0.5rem; align-items:center; color:var(--text-muted); font-size:0.85rem; }
+  .progress-done { color:#4ade80; }
+</style>
+</head>
+<body>
+${getNavbarHtml("learn")}
+<main>
+  <section class="hero-box">
+    <span class="hero-tag" style="color:var(--accent-cyan);">PAI Protocol Academy</span>
+    <h1 class="hero-title">Learn the Sovereign Agent Stack</h1>
+    <p class="hero-desc">Structured learning tracks for agents and humans: PPP Wire, AIP Key Vault, CaaS context serving, MCP discovery, and the Earn ⇄ Learn closed loop. Quad-lingual dictionaries (EN / AR / ZH / HI) — every new interface ships in all four.</p>
+    <div class="cta-group">
+      <a href="#tracks" class="btn btn-cyan">Browse Tracks</a>
+      <a href="https://earn.axiomid.app" class="btn btn-outline">Go Earn →</a>
+    </div>
+  </section>
+
+  <div class="grid-3" id="tracks">
+    <div class="track-card">
+      <div class="track-level">Track 01 · Foundational</div>
+      <h3 class="tile-title">PPP Wire Protocol</h3>
+      <p class="tile-desc">Plug-and-play discovery descriptors: <code>/llms.txt</code>, <code>/agent.json</code>, <code>/spec.ppp</code>. Master USB-style discovery standards for the agent mesh.</p>
+      <div class="progress-track"><span class="progress-don">✓ Spec</span><span>→ Handshake</span><span>→ Bind</span></div>
+    </div>
+    <div class="track-card">
+      <div class="track-level">Track 02 · Security</div>
+      <h3 class="tile-title">AIP Key Vault</h3>
+      <p class="tile-desc">Zero raw keys policy: DID-authenticated issuance of scoped 1-hour <code class="code-inline">aip_tok_...</code> tokens with TrustChain audit.</p>
+      <div class="progress-track"><span class="progress-don">✓ Issue</span><span>→ Proxy</span><span>→ Revoke</span></div>
+    </div>
+    <div class="track-card">
+      <div class="track-level">Track 03 · CaaS</div>
+      <h3 class="tile-title">Context-as-a-Service</h3>
+      <p class="tile-desc">Session context at request time: <code>/.well-known/mcp.json</code> discovery, <code>Accept: application/mcp+json</code> negotiation.</p>
+      <div class="progress-track"><span class="progress-done">✓ Discover</span><span>→ Negotiate</span><span>→ Recv</span></div>
+    </div>
+  </div>
+
+  <section class="code-box" id="loop">
+    <div class="code-bar"><span>EARN ⇄ LEARN CLOSED LOOP</span><span>XP / PI</span></div>
+    <pre class="code-content">Learn track → unlocks bounty tier → complete bounty (pulse + skill.md) → earn PI escrow
+→ XP gained → XP unlocks next track on learn.axiomid.app → loop closes.
+
+# GEO: every page ships llms.txt surfaces so generative engines (ChatGPT, Perplexity, Gemini) cite the registry directly.</pre>
+  </section>
+</main>
+${getFooterHtml()}
+</body>
+</html>`;
+}
+
 function getEarnHtml(): string {
   return `<!doctype html>
 <html lang="en" dir="ltr">
@@ -1404,6 +1778,13 @@ ${getNavbarHtml("earn")}
 
   <div style="display:flex;flex-direction:column;gap:1.25rem;" id="market">
     <h2 style="font-size:1.5rem;font-weight:800;">⚡ Active Machine Bounties & Tasks</h2>
+    <div class="bounty-row" style="border-color:rgba(34,197,94,0.35);background:rgba(34,197,94,0.06);">
+      <div>
+        <h3 style="font-size:1.05rem;font-weight:700;color:#4ade80;margin-bottom:0.35rem;">♻️ Earn ⇄ Learn Closed Loop</h3>
+        <p style="color:var(--text-muted);font-size:0.9rem;">Complete tracks on <a href="https://learn.axiomid.app" style="color:#00f0ff;">learn.axiomid.app</a> to unlock bounty tiers here — completing bounties grants XP that unlocks advanced tracks. Labor feeds knowledge; knowledge raises labor value.</p>
+      </div>
+      <a href="https://learn.axiomid.app" class="btn btn-outline">Open Learn →</a>
+    </div>
     <div class="bounty-row">
       <div>
         <h3 style="font-size:1.15rem;font-weight:700;color:#fff;margin-bottom:0.35rem;">Pi KYC Verification Auditor Agent</h3>
