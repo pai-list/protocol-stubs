@@ -160,7 +160,7 @@ export default {
       }
 
       // 404 for unrecognized subdomains
-      return html(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>404 — PAI Universe</title><style>body{background:#020617;color:#e2e8f0;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}div{text-align:center}h1{font-size:4rem;color:#00f0ff;margin-bottom:1rem}p{color:#94a3b8}a{color:#00f0ff;text-decoration:none}a:hover{text-decoration:underline}</style></head><body><div><h1>404</h1><p>Unknown protocol subdomain: <strong>${key}.axiomid.app</strong></p><p><a href="https://index.axiomid.app">← Return to PAI Index</a></p></div></body></html>`, 404);
+      return html(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>404 — PAI Universe</title><meta property="og:title" content="404 — PAI Universe"/><meta property="og:type" content="website"/><meta property="og:image" content="https://axiomid.app/api/og?title=404%20%E2%80%94%20PAI%20Universe&domain=axiomid.app"/><meta property="og:url" content="https://axiomid.app/"/><style>body{background:#020617;color:#e2e8f0;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}div{text-align:center}h1{font-size:4rem;color:#00f0ff;margin-bottom:1rem}p{color:#94a3b8}a{color:#00f0ff;text-decoration:none}a:hover{text-decoration:underline}</style></head><body><div><h1>404</h1><p>Unknown protocol subdomain: <strong>${key}.axiomid.app</strong></p><p><a href="https://index.axiomid.app">← Return to PAI Index</a></p></div></body></html>`, 404);
     } catch (err) {
       return new Response(JSON.stringify({ error: "Internal Server Error", message: err instanceof Error ? err.message : "Unknown error" }), {
         status: 500,
@@ -949,7 +949,7 @@ function getAxiomIdHtml(): string {
 <html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>PAI Universe — Sovereign AI Agent Protocol on Pi Network | axiomid.app</title>
+<title>PAI Universe — Sovereign AI Agent Protocol on Pi Network | axiomid.app</title><meta property="og:title" content="PAI Universe — Sovereign AI Agent Protocol on Pi Network | axiomid.app"/><meta property="og:type" content="website"/><meta property="og:image" content="https://axiomid.app/api/og?title=PAI%20Universe%20%E2%80%94%20Sovereign%20AI%20Agent%20Protocol%20on%20Pi%20Network%20|%20axiomid.app&domain=axiomid.app"/><meta property="og:url" content="https://axiomid.app/"/><link rel="icon" type="image/x-icon" href="https://axiomid.app/favicon.ico"/><link rel="apple-touch-icon" href="https://axiomid.app/icon-192x192.png"/>
 <meta name="description" content="PAI Universe: sovereign AI-agent identity (W3C DID), passport, skill registry, memory (mem7), wire protocols (PPP/AIP), and the Pi Network Agentic Skills marketplace — all hosted edge-first on axiomid.app."/>
 <meta name="keywords" content="Pi Network, AI agents, W3C DID, agent identity, decentralized identity, MCP server, AI skills marketplace, AxiomID, sovereign AI, agent passport"/>
 <link rel="canonical" href="https://axiomid.app/"/>
@@ -1125,7 +1125,7 @@ function getNodeHtml(): string {
 <html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Node Port — Agent Node Registry (node.axiomid.app)</title>
+<title>Node Port — Agent Node Registry (node.axiomid.app)</title><meta property="og:title" content="Node Port — Agent Node Registry (node.axiomid.app)"/><meta property="og:type" content="website"/><meta property="og:image" content="https://axiomid.app/api/og?title=Node%20Port%20%E2%80%94%20Agent%20Node%20Registry%20(node.axiomid.app)&domain=node.axiomid.app"/><meta property="og:url" content="https://node.axiomid.app/"/><link rel="icon" type="image/x-icon" href="https://axiomid.app/favicon.ico"/><link rel="apple-touch-icon" href="https://axiomid.app/icon-192x192.png"/>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>${ENTERPRISE_CSS}</style>
 </head>
@@ -1180,7 +1180,7 @@ function getHarnessHtml(): string {
 <html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Harness — The Forge (harness.axiomid.app)</title>
+<title>Harness — The Forge (harness.axiomid.app)</title><meta property="og:title" content="Harness — The Forge (harness.axiomid.app)"/><meta property="og:type" content="website"/><meta property="og:image" content="https://axiomid.app/api/og?title=Harness%20%E2%80%94%20The%20Forge%20(harness.axiomid.app)&domain=harness.axiomid.app"/><meta property="og:url" content="https://harness.axiomid.app/"/><link rel="icon" type="image/x-icon" href="https://axiomid.app/favicon.ico"/><link rel="apple-touch-icon" href="https://axiomid.app/icon-192x192.png"/>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>${ENTERPRISE_CSS}</style>
 </head>
@@ -1311,7 +1311,7 @@ function getIndexHtml(): string {
 <html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>PAI Universe Mirror Index (index.axiomid.app)</title>
+<title>PAI Universe Mirror Index (index.axiomid.app)</title><meta property="og:title" content="PAI Universe Mirror Index (index.axiomid.app)"/><meta property="og:type" content="website"/><meta property="og:image" content="https://axiomid.app/api/og?title=PAI%20Universe%20Mirror%20Index%20(index.axiomid.app)&domain=index.axiomid.app"/><meta property="og:url" content="https://index.axiomid.app/"/><link rel="icon" type="image/x-icon" href="https://axiomid.app/favicon.ico"/><link rel="apple-touch-icon" href="https://axiomid.app/icon-192x192.png"/>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>${ENTERPRISE_CSS}</style>
 </head>
@@ -1371,7 +1371,7 @@ function getAipHtml(): string {
 <html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>AIP — Zero Raw Keys Security Gateway (aip.axiomid.app)</title>
+<title>AIP — Zero Raw Keys Security Gateway (aip.axiomid.app)</title><meta property="og:title" content="AIP — Zero Raw Keys Security Gateway (aip.axiomid.app)"/><meta property="og:type" content="website"/><meta property="og:image" content="https://axiomid.app/api/og?title=AIP%20%E2%80%94%20Zero%20Raw%20Keys%20Security%20Gateway%20(aip.axiomid.app)&domain=aip.axiomid.app"/><meta property="og:url" content="https://aip.axiomid.app/"/><link rel="icon" type="image/x-icon" href="https://axiomid.app/favicon.ico"/><link rel="apple-touch-icon" href="https://axiomid.app/icon-192x192.png"/>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>${ENTERPRISE_CSS}</style>
 </head>
@@ -1440,7 +1440,7 @@ function getPppHtml(): string {
 <html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>PPP — Universal USB Agentic Connector (ppp.axiomid.app)</title>
+<title>PPP — Universal USB Agentic Connector (ppp.axiomid.app)</title><meta property="og:title" content="PPP — Universal USB Agentic Connector (ppp.axiomid.app)"/><meta property="og:type" content="website"/><meta property="og:image" content="https://axiomid.app/api/og?title=PPP%20%E2%80%94%20Universal%20USB%20Agentic%20Connector%20(ppp.axiomid.app)&domain=ppp.axiomid.app"/><meta property="og:url" content="https://ppp.axiomid.app/"/><link rel="icon" type="image/x-icon" href="https://axiomid.app/favicon.ico"/><link rel="apple-touch-icon" href="https://axiomid.app/icon-192x192.png"/>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>${ENTERPRISE_CSS}</style>
 </head>
@@ -1528,7 +1528,7 @@ function getMemoryHtml(): string {
 <html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>PAI Memory — 7-Layer Vector & Graph Engine (memory.axiomid.app)</title>
+<title>PAI Memory — 7-Layer Vector & Graph Engine (memory.axiomid.app)</title><meta property="og:title" content="PAI Memory — 7-Layer Vector & Graph Engine (memory.axiomid.app)"/><meta property="og:type" content="website"/><meta property="og:image" content="https://axiomid.app/api/og?title=PAI%20Memory%20%E2%80%94%207-Layer%20Vector%20%26%20Graph%20Engine%20(memory.axiomid.app)&domain=memory.axiomid.app"/><meta property="og:url" content="https://memory.axiomid.app/"/><link rel="icon" type="image/x-icon" href="https://axiomid.app/favicon.ico"/><link rel="apple-touch-icon" href="https://axiomid.app/icon-192x192.png"/>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   ${ENTERPRISE_CSS}
@@ -1658,7 +1658,7 @@ function getLearnHtml(): string {
 <html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Learn — PAI Protocol Academy (learn.axiomid.app)</title>
+<title>Learn — PAI Protocol Academy (learn.axiomid.app)</title><meta property="og:title" content="Learn — PAI Protocol Academy (learn.axiomid.app)"/><meta property="og:type" content="website"/><meta property="og:image" content="https://axiomid.app/api/og?title=Learn%20%E2%80%94%20PAI%20Protocol%20Academy%20(learn.axiomid.app)&domain=learn.axiomid.app"/><meta property="og:url" content="https://learn.axiomid.app/"/><link rel="icon" type="image/x-icon" href="https://axiomid.app/favicon.ico"/><link rel="apple-touch-icon" href="https://axiomid.app/icon-192x192.png"/>
 <meta name="description" content="The PAI Protocol Academy: structured tracks for agents and humans — PPP Wire, AIP Key Vault, CaaS context serving, MCP discovery. Completing tracks unlocks Machine Exchange bounty tiers."/>
 <link rel="canonical" href="https://learn.axiomid.app/"/>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700;800&display=swap">
@@ -1732,7 +1732,7 @@ function getEarnHtml(): string {
 <html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Earn — Pi Autonomous Machine Labor Exchange (earn.axiomid.app)</title>
+<title>Earn — Pi Autonomous Machine Labor Exchange (earn.axiomid.app)</title><meta property="og:title" content="Earn — Pi Autonomous Machine Labor Exchange (earn.axiomid.app)"/><meta property="og:type" content="website"/><meta property="og:image" content="https://axiomid.app/api/og?title=Earn%20%E2%80%94%20Pi%20Autonomous%20Machine%20Labor%20Exchange%20(earn.axiomid.app)&domain=earn.axiomid.app"/><meta property="og:url" content="https://earn.axiomid.app/"/><link rel="icon" type="image/x-icon" href="https://axiomid.app/favicon.ico"/><link rel="apple-touch-icon" href="https://axiomid.app/icon-192x192.png"/>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   ${ENTERPRISE_CSS}
@@ -1827,7 +1827,7 @@ function getAuthHtml(): string {
 <html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Auth — Pi OAuth2 & W3C DID Authentication (auth.axiomid.app)</title>
+<title>Auth — Pi OAuth2 & W3C DID Authentication (auth.axiomid.app)</title><meta property="og:title" content="Auth — Pi OAuth2 & W3C DID Authentication (auth.axiomid.app)"/><meta property="og:type" content="website"/><meta property="og:image" content="https://axiomid.app/api/og?title=Auth%20%E2%80%94%20Pi%20OAuth2%20%26%20W3C%20DID%20Authentication%20(auth.axiomid.app)&domain=auth.axiomid.app"/><meta property="og:url" content="https://auth.axiomid.app/"/><link rel="icon" type="image/x-icon" href="https://axiomid.app/favicon.ico"/><link rel="apple-touch-icon" href="https://axiomid.app/icon-192x192.png"/>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>${ENTERPRISE_CSS}</style>
 </head>
@@ -1893,7 +1893,7 @@ function getSkillsHtml(): string {
 <html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Skills — Pi Agentic Skills & Dedicated MCP Server (skills.axiomid.app)</title>
+<title>Skills — Pi Agentic Skills & Dedicated MCP Server (skills.axiomid.app)</title><meta property="og:title" content="Skills — Pi Agentic Skills & Dedicated MCP Server (skills.axiomid.app)"/><meta property="og:type" content="website"/><meta property="og:image" content="https://axiomid.app/api/og?title=Skills%20%E2%80%94%20Pi%20Agentic%20Skills%20%26%20Dedicated%20MCP%20Server%20(skills.axiomid.app)&domain=skills.axiomid.app"/><meta property="og:url" content="https://skills.axiomid.app/"/><link rel="icon" type="image/x-icon" href="https://axiomid.app/favicon.ico"/><link rel="apple-touch-icon" href="https://axiomid.app/icon-192x192.png"/>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>${ENTERPRISE_CSS}</style>
 </head>
@@ -1958,7 +1958,7 @@ function getMailHtml(): string {
 <html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Mail — Agentic Email Gateway (mail.axiomid.app)</title>
+<title>Mail — Agentic Email Gateway (mail.axiomid.app)</title><meta property="og:title" content="Mail — Agentic Email Gateway (mail.axiomid.app)"/><meta property="og:type" content="website"/><meta property="og:image" content="https://axiomid.app/api/og?title=Mail%20%E2%80%94%20Agentic%20Email%20Gateway%20(mail.axiomid.app)&domain=mail.axiomid.app"/><meta property="og:url" content="https://mail.axiomid.app/"/><link rel="icon" type="image/x-icon" href="https://axiomid.app/favicon.ico"/><link rel="apple-touch-icon" href="https://axiomid.app/icon-192x192.png"/>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>${ENTERPRISE_CSS}</style>
 </head>
