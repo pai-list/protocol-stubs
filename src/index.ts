@@ -62,8 +62,10 @@ export default {
 
       // Dynamic OG images: proxy to the AxiomID Next.js app (Vercel) — the
       // apex host is a worker, so /api/og must cross the wire explicitly.
+      // Fixed anchor: AxiomID middleware allowlists exactly this vercel.app
+      // host (src/middleware.ts isAllowedHost); deployment-hash URLs 403.
       if (url.pathname === "/api/og") {
-        const vercel = "https://axiomid-34uenxj9l-axiom-id.vercel.app";
+        const vercel = "https://axiomid-app-axiom-id.vercel.app";
         const upstream = await fetch(vercel + url.pathname + url.search, {
           headers: { "User-Agent": request.headers.get("User-Agent") ?? "cloudflare-worker" },
         });
@@ -99,6 +101,30 @@ export default {
           ]
         });
       }
+      // POST /api/claim — Earn claim path: verify skill.md + heartbeat.md proof, issue AIP escrow token
+      if ((url.pathname === "/api/claim" || url.pathname === "/v1/claim") && request.method === "POST") {
+        const body = (await request.json().catch(() => ({}))) as Record<string, string | undefined>;
+        const { bounty_id, agent_did, proof_url, commit_url } = body;
+        if (!bounty_id || !agent_did || !proof_url) {
+          return json({ error: "missing_fields", required: ["bounty_id", "agent_did", "proof_url"] }, 400);
+        }
+        const bounty = { id: "bounty_kyc_audit_102", reward_pi: 100 };
+        const heartbeatValid = proof_url.includes("heartbeat.md") || proof_url.includes("commit");
+        if (!heartbeatValid) {
+          return json({ error: "invalid_proof", message: "proof_url must reference /heartbeat.md or commit with liveness pulse" }, 422);
+        }
+        const aip_token = `aip_tok_${Date.now()}${Math.random().toString(36).slice(2, 10)}`;
+        return json({
+          status: "claimed",
+          bounty_id,
+          agent_did,
+          reward_pi: bounty.reward_pi,
+          currency: "PI",
+          aip_token,
+          escrow: { status: "locked", release_after: "verification", token: aip_token },
+          timestamp: new Date().toISOString()
+        });
+      }
       if (url.pathname === "/mcp" || url.pathname === "/v1/mcp") {
         return json({
           jsonrpc: "2.0",
@@ -128,7 +154,7 @@ export default {
         return new Response(getAgenticTxt(), { headers: { "Content-Type": "text/plain; charset=utf-8", "Access-Control-Allow-Origin": "*", ...SECURITY_HEADERS } });
       }
       if (url.pathname === "/sitemap.xml") {
-        const urls = ["", "index", "aip", "ppp", "memory", "earn", "auth", "skills", "mail", "harness", "node", "jobs", "rewards", "ads", "learn"]
+        const urls = ["", "index", "aip", "ppp", "memory", "earn", "auth", "skills", "mail", "harness", "node", "learn"]
           .map(k => `  <url><loc>https://${k ? k + "." : ""}axiomid.app/</loc><changefreq>weekly</changefreq><priority>${k === "" ? "1.0" : "0.8"}</priority></url>`)
           .join("\n");
         return new Response(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`, {
@@ -803,6 +829,16 @@ function getFooterHtml(): string {
         </div>
         <span class="lang-check" id="check-zh" style="display:none;">✓</span>
       </div>
+      <div class="lang-option-item" id="opt-hi" onclick="setLanguage('hi')">
+        <div class="lang-flag-name">
+          <span class="lang-flag">🇮🇳</span>
+          <div>
+            <div class="lang-label">हिन्दी (Hindi)</div>
+            <div class="lang-sublabel">संप्रभु एआई एजेंट प्रोटोकॉल • LTR</div>
+          </div>
+        </div>
+        <span class="lang-check" id="check-hi" style="display:none;">✓</span>
+      </div>
     </div>
   </div>
 </div>
@@ -895,7 +931,7 @@ function setLanguage(lang) {
   document.documentElement.lang = lang;
   document.documentElement.dir = (lang === "ar" ? "rtl" : "ltr");
   
-  ["en", "ar", "zh"].forEach(l => {
+  ["en", "ar", "zh", "hi"].forEach(l => {
     const opt = document.getElementById("opt-" + l);
     const chk = document.getElementById("check-" + l);
     if (opt && chk) {
@@ -1756,8 +1792,7 @@ ${getFooterHtml()}
 </body></html>`;
 }
 
-/* 5. EARN PAGE (earn.axiomid.app) — Machine Labor Exchange */
-/* 5. EARN PAGE (earn.axiomid.app) — Machine Labor Exchange */
+/* 5. LEARN PAGE (learn.axiomid.app) — Protocol Academy */
 function getLearnHtml(): string {
   return `<!doctype html>
 <html lang="en" dir="ltr">

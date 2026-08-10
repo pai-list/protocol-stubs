@@ -9,15 +9,14 @@
     { "pattern": "aip.axiomid.app/*", "zone_name": "axiomid.app" },
     { "pattern": "auth.axiomid.app/*", "zone_name": "axiomid.app" },
     { "pattern": "earn.axiomid.app/*", "zone_name": "axiomid.app" },
-    { "pattern": "jobs.axiomid.app/*", "zone_name": "axiomid.app" },
     { "pattern": "ppp.axiomid.app/*", "zone_name": "axiomid.app" },
     { "pattern": "memory.axiomid.app/*", "zone_name": "axiomid.app" },
     { "pattern": "mail.axiomid.app/*", "zone_name": "axiomid.app" },
     { "pattern": "index.axiomid.app/*", "zone_name": "axiomid.app" },
-    { "pattern": "rewards.axiomid.app/*", "zone_name": "axiomid.app" },
-    { "pattern": "ads.axiomid.app/*", "zone_name": "axiomid.app" },
     { "pattern": "learn.axiomid.app/*", "zone_name": "axiomid.app" },
     { "pattern": "harness.axiomid.app/*", "zone_name": "axiomid.app" },
     { "pattern": "node.axiomid.app/*", "zone_name": "axiomid.app" },
+    { "pattern": "skills.axiomid.app/*", "zone_name": "axiomid.app" },
+    { "pattern": "mcp.axiomid.app/*", "zone_name": "axiomid.app" },
   ]
 }
