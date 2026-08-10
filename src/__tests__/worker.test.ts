@@ -29,6 +29,30 @@ describe("protocol-stubs Edge Worker Suite", () => {
     });
   });
 
+  describe("Apex Routing", () => {
+    it("should 302 apex browsers to the live Vercel app (middleware-allowlisted anchor)", async () => {
+      const req = new Request("https://axiomid.app/", {
+        headers: { Accept: "text/html" },
+      });
+      const res = await worker.fetch(req);
+
+      expect(res.status).toBe(302);
+      expect(res.headers.get("Location")).toBe("https://axiomid-app-axiom-id.vercel.app/");
+    });
+
+    it("should keep serving JSON to apex agents (content negotiation unchanged)", async () => {
+      const req = new Request("https://axiomid.app/", {
+        headers: { Accept: "application/json" },
+      });
+      const res = await worker.fetch(req);
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get("Content-Type")).toContain("application/json");
+      const json = await res.json() as Record<string, unknown>;
+      expect(json.protocol).toBe("axiomid.app");
+    });
+  });
+
   describe("API & Machine-Readable Endpoints", () => {
     it("should serve /health endpoint with JSON diagnostic status", async () => {
       const req = new Request("https://index.axiomid.app/health");

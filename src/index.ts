@@ -27,10 +27,8 @@ function html(body: string, status = 200): Response {
   });
 }
 
-/** Known subdomain handlers */
+/** Known subdomain handlers (apex axiomid.app is 302-redirected to the Vercel app) */
 const SUBDOMAIN_HANDLERS: Record<string, () => string> = {
-  "": getAxiomIdHtml,
-  "axiomid.app": getAxiomIdHtml,
   index: getIndexHtml,
   aip: getAipHtml,
   ppp: getPppHtml,
@@ -167,7 +165,7 @@ export default {
         return json(getMcpDiscovery(host));
       }
 
-      // CaaS: agent/human content negotiation — agents get JSON, browsers get HTML
+      // CaaS: agent/human content negotiation — agents get JSON, browsers get redirected
       if (url.pathname === "/" || url.pathname === "") {
         const accepts = request.headers.get("Accept") || "";
         const wantsMcp = accepts.includes("application/mcp+json") || accepts.includes("application/json") || url.searchParams.get("mcp") === "1";
@@ -177,6 +175,14 @@ export default {
             host,
             agent: getMcpDiscovery(host),
             context_hint: "Session context available at /v1/memory/recall (bitemporal). For full page go to https://" + host + "/",
+          });
+        }
+        // Apex browsers → the live AxiomID app on Vercel (worker no longer owns apex HTML).
+        // Anchor is the middleware-allowlisted host; the bare "axiomid-app.vercel.app" host is invalid.
+        if (host === "axiomid.app") {
+          return new Response(null, {
+            status: 302,
+            headers: { Location: "https://axiomid-app-axiom-id.vercel.app/", ...SECURITY_HEADERS },
           });
         }
       }
@@ -964,303 +970,7 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>`;
 }
 
-/* 0. ROOT AXIOMID.APP — PAI Universal Entry Point (iframe/smart UI for all subdomains) */
-const SUBDOMAINS_CONFIG = [
-  { key: 'index', name: 'Index Mirror', domain: 'https://index.axiomid.app', icon: '📋', iconBg: 'rgba(0,240,255,0.12)', iconColor: 'var(--accent-cyan)' },
-  { key: 'aip', name: 'AIP Vault', domain: 'https://aip.axiomid.app', icon: '🛡️', iconBg: 'rgba(192,132,252,0.12)', iconColor: 'var(--accent-purple)' },
-  { key: 'ppp', name: 'PPP Wire', domain: 'https://ppp.axiomid.app', icon: '🔌', iconBg: 'rgba(45,212,191,0.12)', iconColor: 'var(--accent-emerald)' },
-  { key: 'memory', name: '7-Layer Memory', domain: 'https://memory.axiomid.app', icon: '🔮', iconBg: 'rgba(56,189,248,0.12)', iconColor: 'var(--accent-blue)' },
-  { key: 'earn', name: 'Machine Exchange', domain: 'https://earn.axiomid.app', icon: '⚡', iconBg: 'rgba(251,191,36,0.12)', iconColor: 'var(--accent-amber)' },
-  { key: 'auth', name: 'OAuth2 & DID', domain: 'https://auth.axiomid.app', icon: '🔑', iconBg: 'rgba(244,63,94,0.12)', iconColor: 'var(--accent-rose)' },
-  { key: 'skills', name: 'Skills MCP', domain: 'https://skills.axiomid.app', icon: '🤖', iconBg: 'rgba(0,240,255,0.12)', iconColor: 'var(--accent-cyan)' },
-  { key: 'mail', name: 'Email Gateway', domain: 'https://mail.axiomid.app', icon: '📧', iconBg: 'rgba(168,85,247,0.12)', iconColor: 'var(--accent-purple)' },
-];
-
-function getAxiomIdHtml(): string {
-  const EXTRA_SERVICES = [
-    { key: 'learn', name: 'Protocol Academy', domain: 'https://learn.axiomid.app', icon: '🎓', iconBg: 'rgba(0,240,255,0.12)', iconColor: 'var(--accent-cyan)' },
-    { key: 'node', name: 'Node Port', domain: 'https://node.axiomid.app', icon: '🗼', iconBg: 'rgba(192,132,252,0.12)', iconColor: 'var(--accent-purple)' },
-    { key: 'harness', name: 'The Forge', domain: 'https://harness.axiomid.app', icon: '🛠️', iconBg: 'rgba(251,191,36,0.12)', iconColor: 'var(--accent-amber)' },
-    { key: 'jobs', name: 'Job Routing', domain: 'https://jobs.axiomid.app', icon: '🧭', iconBg: 'rgba(45,212,191,0.12)', iconColor: 'var(--accent-emerald)' },
-    { key: 'rewards', name: 'Rewards', domain: 'https://rewards.axiomid.app', icon: '🪙', iconBg: 'rgba(251,191,36,0.12)', iconColor: 'var(--accent-amber)' },
-    { key: 'ads', name: 'Per-Use Ads', domain: 'https://ads.axiomid.app', icon: '📣', iconBg: 'rgba(244,63,94,0.12)', iconColor: 'var(--accent-rose)' },
-    { key: 'gspace', name: 'Global Workspace', domain: 'https://gspace.axiomid.app', icon: '🛰️', iconBg: 'rgba(168,85,247,0.12)', iconColor: 'var(--accent-purple)' },
-    { key: 'piverify', name: 'Pi Verify (KYA)', domain: 'https://piverify.axiomid.app', icon: '✅', iconBg: 'rgba(56,189,248,0.12)', iconColor: 'var(--accent-blue)' },
-  ];
-  const ALL_SERVICES = [...SUBDOMAINS_CONFIG, ...EXTRA_SERVICES];
-  const SERVICE_BLURBS: Record<string, string> = {
-    index: 'Mirror of every live route on the network',
-    aip: 'Insulated key custody for AI agents',
-    'piverify': 'API readiness + human verification',
-    ppp: 'USB-style chassis for peer wiring',
-    memory: 'Seven-layer episodic + semantic store',
-    earn: 'Machine labor and exchange frontier',
-    auth: 'DID documentation + Pi sign-in surface',
-    skills: 'Four-language skills registry + MCP endpoint',
-    mail: 'Mail routing gateway for agents',
-    learn: 'Earn-and-learn academy loop',
-    node: 'Persistent runtime garden (Phase 2)',
-    harness: 'Toolsmithy that compiles bodies',
-    jobs: 'Queue for scheduled works',
-    rewards: 'Incentives groundwork',
-    ads: 'Permission-gated promotion surface',
-    gspace: 'Shared workspace (Vercel edge)',
-  };
-  const servicesCards = ALL_SERVICES.map(sd => `
-    <a class="ax-card" href="${sd.domain}" target="_blank" rel="noopener noreferrer" data-reveal>
-      <span class="ax-card-icon" style="background:${sd.iconBg};color:${sd.iconColor};">${sd.icon}</span>
-      <span class="ax-card-body">
-        <span class="ax-card-name">${sd.name}</span>
-        <span class="ax-card-domain">${sd.domain.replace('https://', '')}</span>
-        <span class="ax-card-blurb">${SERVICE_BLURBS[sd.key] ?? 'Live subdomain service on the edge.'}</span>
-      </span>
-      <span class="ax-card-live" aria-label="live"></span>
-    </a>`).join('');
-
-  return `<!doctype html>
-<html lang="en" dir="ltr">
-<head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>PAI Universe — Sovereign AI Agent Protocol on Pi Network | axiomid.app</title><meta property="og:title" content="PAI Universe — Sovereign AI Agent Protocol on Pi Network | axiomid.app"/><meta property="og:type" content="website"/><meta property="og:image" content="https://axiomid.app/api/og?title=PAI%20Universe%20%E2%80%94%20Sovereign%20AI%20Agent%20Protocol%20on%20Pi%20Network%20|%20axiomid.app&domain=axiomid.app"/><meta property="og:url" content="https://axiomid.app/"/><link rel="icon" type="image/x-icon" href="https://axiomid.app/favicon.ico"/><link rel="apple-touch-icon" href="https://axiomid.app/icon-192x192.png"/>
-<meta name="description" content="PAI Universe: sovereign AI-agent identity (W3C DID), passport, skill registry, memory (mem7), wire protocols (PPP/AIP), and the Pi Network Agentic Skills marketplace — all hosted edge-first on axiomid.app."/>
-<meta name="keywords" content="Pi Network, AI agents, W3C DID, agent identity, decentralized identity, MCP server, AI skills marketplace, AxiomID, sovereign AI, agent passport"/>
-<link rel="canonical" href="https://axiomid.app/"/>
-<link rel="alternate" type="text/plain" href="/llms.txt" title="Machine-readable site index (LLM)"/>
-<link rel="alternate" type="application/json" href="/agent.json" title="Agent JSON (GEO)"/>
-<script type="application/ld+json">${JSON.stringify(getSeoSchema("hub"))}</script>
-<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-<style>
-${ENTERPRISE_CSS}
-</style>
-<style>
-.ax-body{background:#030614;overflow-x:hidden;}
-.ax-hdr{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:1.1rem 2rem;backdrop-filter:blur(14px);background:rgba(2,6,23,.55);border-bottom:1px solid rgba(148,163,184,.13);}
-.ax-brand{display:flex;align-items:center;gap:.7rem;color:#fff;text-decoration:none;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.05rem;letter-spacing:.01em;}
-.ax-brand svg{height:26px;width:26px;filter:drop-shadow(0 0 10px rgba(0,240,255,.55));}
-.ax-nav{display:flex;gap:1.6rem;align-items:center;font-size:.85rem;font-weight:600;color:#94a3b8;}
-.ax-nav a{color:inherit;text-decoration:none;transition:color .2s;}
-.ax-nav a:hover{color:#00f0ff;}
-.ax-cta{background:linear-gradient(90deg,#00f0ff,#7c3aed);color:#04070f;font-weight:800;font-size:.85rem;padding:.55rem 1.15rem;border-radius:999px;text-decoration:none;box-shadow:0 0 24px rgba(0,240,255,.35);transition:transform .2s,box-shadow .2s;}
-.ax-cta:hover{transform:translateY(-1px);box-shadow:0 0 36px rgba(124,58,237,.5);}
-.ax-hero{position:relative;min-height:92vh;display:flex;align-items:center;padding:5.5rem 2rem 6rem;isolation:isolate;}
-.ax-hero::before{content:"";position:absolute;inset:0;z-index:-2;background-image:linear-gradient(rgba(148,163,184,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(148,163,184,.07) 1px,transparent 1px);background-size:56px 56px;mask-image:radial-gradient(ellipse 70% 60% at 50% 40%,#000 40%,transparent 100%);}
-.ax-orb{position:absolute;z-index:-1;border-radius:50%;filter:blur(90px);opacity:.5;animation:axDrift 16s ease-in-out infinite;}
-.ax-orb.a{width:480px;height:480px;background:radial-gradient(circle,rgba(0,240,255,.5),transparent 65%);top:-120px;left:-80px;}
-.ax-orb.b{width:520px;height:520px;background:radial-gradient(circle,rgba(124,58,237,.55),transparent 65%);bottom:-180px;right:-100px;animation-delay:-6s;}
-.ax-orb.c{width:300px;height:300px;background:radial-gradient(circle,rgba(244,63,94,.35),transparent 65%);top:30%;right:22%;animation-delay:-11s;}
-@keyframes axDrift{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(40px,-30px) scale(1.08)}}
-.ax-ring{position:absolute;top:50%;right:6%;transform:translateY(-50%);width:min(420px,38vw);aspect-ratio:1;border-radius:50%;z-index:-1;opacity:.75;background:conic-gradient(from 0deg,transparent 0 40deg,#00f0ff44 90deg,transparent 120deg 200deg,#7c3aed55 260deg,transparent 300deg);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 2px),#000 calc(100% - 2px));mask:radial-gradient(farthest-side,transparent calc(100% - 2px),#000 calc(100% - 2px));animation:axSpin 14s linear infinite;}
-@keyframes axSpin{to{transform:translateY(-50%) rotate(360deg)}}
-.ax-hero-inner{max-width:1200px;margin:0 auto;width:100%;}
-.ax-eyebrow{display:inline-flex;align-items:center;gap:.55rem;font-size:.78rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#00f0ff;border:1px solid rgba(0,240,255,.35);background:rgba(0,240,255,.07);padding:.42rem .95rem;border-radius:999px;margin-bottom:1.6rem;}
-.ax-eyebrow .dot{width:8px;height:8px;border-radius:50%;background:#00f0ff;box-shadow:0 0 12px #00f0ff;animation:axPulse 2.2s infinite;}
-@keyframes axPulse{0%,100%{opacity:1}50%{opacity:.35}}
-.ax-h1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(2.6rem,6.4vw,5.2rem);line-height:1.04;letter-spacing:-.02em;margin:0 0 1.4rem;color:#fff;}
-.ax-h1 .grad{background:linear-gradient(92deg,#e2e8f0 20%,#00f0ff 48%,#c084fc 70%,#fda4af 90%);background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:axSweep 7s ease-in-out infinite;}
-@keyframes axSweep{0%,100%{background-position:0% 0}50%{background-position:100% 0}}
-.ax-sub{max-width:640px;color:#a5b4c9;font-size:clamp(1rem,1.6vw,1.22rem);line-height:1.7;margin:0 0 2.2rem;}
-.ax-actions{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:2.6rem;}
-.ax-btn{padding:.85rem 1.7rem;border-radius:14px;font-weight:800;font-size:.95rem;text-decoration:none;border:1px solid transparent;display:inline-flex;align-items:center;gap:.55rem;transition:all .25s;}
-.ax-btn-p{background:linear-gradient(120deg,#0891b2,#7c3aed);color:#fff;box-shadow:0 10px 40px -8px rgba(124,58,237,.55);}
-.ax-btn-p:hover{transform:translateY(-2px);box-shadow:0 16px 48px -8px rgba(0,240,255,.5);}
-.ax-btn-g{background:rgba(148,163,184,.08);border-color:rgba(148,163,184,.25);color:#e2e8f0;}
-.ax-btn-g:hover{border-color:rgba(0,240,255,.5);color:#00f0ff;}
-.ax-stats{display:flex;gap:clamp(1.4rem,4vw,3.4rem);flex-wrap:wrap;border-top:1px solid rgba(148,163,184,.15);padding-top:1.6rem;}
-.ax-stat b{display:block;font-family:'Space Grotesk',sans-serif;font-size:1.9rem;color:#fff;background:linear-gradient(90deg,#00f0ff,#c084fc);-webkit-background-clip:text;background-clip:text;color:transparent;}
-.ax-stat span{font-size:.82rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#64748b;}
-.ax-ticker{border-block:1px solid rgba(148,163,184,.12);background:rgba(2,6,23,.4);overflow:hidden;white-space:nowrap;padding:.8rem 0;}
-.ax-ticker-track{display:inline-block;animation:axSlide 30s linear infinite;}
-.ax-ticker span{font-family:'Fira Code',monospace;font-size:.82rem;color:#64748b;margin:0 1.4rem;}
-.ax-ticker b{color:#00f0ff;font-weight:600;}
-@keyframes axSlide{to{transform:translateX(-50%)}}
-.ax-sec{max-width:1200px;margin:0 auto;padding:6.5rem 2rem;}
-.ax-sec-head{display:flex;align-items:end;justify-content:space-between;gap:2rem;margin-bottom:2.8rem;flex-wrap:wrap;}
-.ax-kicker{font-size:.78rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#7c3aed;}
-.ax-sec-h2{font-family:'Space Grotesk',sans-serif;font-size:clamp(1.8rem,3.4vw,2.6rem);font-weight:700;color:#fff;margin:.5rem 0 0;}
-.ax-sec-note{color:#64748b;font-size:.9rem;max-width:340px;line-height:1.6;}
-.ax-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.1rem;}
-.ax-card{display:flex;gap:1rem;align-items:flex-start;background:rgba(15,23,42,.55);border:1px solid rgba(148,163,184,.14);border-radius:18px;padding:1.15rem 1.25rem;text-decoration:none;color:inherit;position:relative;transition:transform .25s,border-color .25s,box-shadow .25s;}
-.ax-card:hover{transform:translateY(-3px);border-color:rgba(0,240,255,.45);box-shadow:0 18px 44px -16px rgba(0,240,255,.25);}
-.ax-card-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;border:1px solid rgba(255,255,255,.09);flex-shrink:0;}
-.ax-card-body{display:flex;flex-direction:column;gap:.18rem;min-width:0;}
-.ax-card-name{font-weight:800;font-size:1rem;color:#e2e8f0;}
-.ax-card-domain{font-family:'Fira Code',monospace;font-size:.74rem;color:#00f0ff;opacity:.85;}
-.ax-card-blurb{font-size:.82rem;color:#7c8ba5;line-height:1.45;}
-.ax-card-live{position:absolute;top:14px;right:14px;width:9px;height:9px;border-radius:50%;background:#22c55e;box-shadow:0 0 10px #22c55e;animation:axPulse 2.2s infinite;}
-.ax-duo{display:grid;grid-template-columns:1.05fr .95fr;gap:3rem;align-items:center;}
-@media (max-width:920px){.ax-duo{grid-template-columns:1fr;gap:2rem}}
-.ax-duo-copy h3{font-family:'Space Grotesk',sans-serif;font-size:clamp(1.5rem,2.6vw,2.1rem);color:#fff;margin:.5rem 0 1rem;line-height:1.25;}
-.ax-duo-copy p{color:#8ea0b8;line-height:1.75;margin:0 0 1.2rem;font-size:.98rem;}
-.ax-langs{display:flex;gap:.7rem;flex-wrap:wrap;margin-top:1.4rem;}
-.ax-lang-chip{font-family:'Fira Code',monospace;font-size:.78rem;padding:.4rem .85rem;border-radius:999px;border:1px solid rgba(148,163,184,.22);color:#cbd5e1;background:rgba(15,23,42,.4);}
-.ax-lang-chip b{color:#00f0ff;}
-.ax-term{border:1px solid rgba(148,163,184,.16);border-radius:18px;overflow:hidden;background:#060a18;box-shadow:0 30px 80px -30px rgba(0,0,0,.9);}
-.ax-term-bar{display:flex;gap:.45rem;align-items:center;padding:.9rem 1.2rem;background:rgba(15,23,42,.7);border-bottom:1px solid rgba(148,163,184,.12);}
-.ax-term-dot{width:11px;height:11px;border-radius:50%;}
-.ax-term-bar span.fname{margin-left:.6rem;font-family:'Fira Code',monospace;font-size:.76rem;color:#64748b;}
-.ax-term-body{display:flex;flex-direction:column;}
-.ax-term-tabs{display:flex;border-bottom:1px solid rgba(148,163,184,.12);}
-.ax-term-tab{padding:.7rem 1.2rem;font-family:'Fira Code',monospace;font-size:.8rem;color:#64748b;cursor:pointer;border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none;transition:color .2s,border-color .2s;}
-.ax-term-tab.on{color:#00f0ff;border-bottom-color:#00f0ff;background:rgba(0,240,255,.05);}
-.ax-term-code{display:none;margin:0;padding:1.4rem 1.6rem;font-family:'Fira Code',monospace;font-size:.8rem;line-height:1.75;color:#86aed4;max-height:380px;overflow:auto;white-space:pre;}
-.ax-term-code.on{display:block;}
-.ax-term-code .k{color:#c084fc;}.ax-term-code .c{color:#475569;}
-.ax-cta-band{margin:0 auto 2rem;max-width:1200px;padding:0 2rem;}
-.ax-cta-panel{position:relative;overflow:hidden;border-radius:26px;border:1px solid rgba(124,58,237,.35);background:linear-gradient(120deg,rgba(8,47,73,.55),rgba(30,10,60,.55));padding:4.5rem 3rem;text-align:center;}
-.ax-cta-panel::before{content:"";position:absolute;inset:-40%;background:radial-gradient(circle at 30% 20%,rgba(0,240,255,.18),transparent 45%),radial-gradient(circle at 75% 80%,rgba(124,58,237,.25),transparent 45%);animation:axDrift 18s ease-in-out infinite;}
-.ax-cta-panel>*{position:relative;}
-.ax-cta-panel h2{font-family:'Space Grotesk',sans-serif;font-size:clamp(1.7rem,3.2vw,2.6rem);color:#fff;margin:0 0 .9rem;}
-.ax-cta-panel p{color:#a5b4c9;max-width:520px;margin:0 auto 1.8rem;line-height:1.7;}
-[data-reveal]{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .7s ease;}
-[data-reveal].in{opacity:1;transform:none;}
-@media (max-width:760px){.ax-nav{display:none}.ax-hero{min-height:auto;padding-top:4rem}}
-</style>
-</head>
-<body class="ax-hub">
-<header class="ax-hdr">
-  <a class="ax-brand" href="https://axiomid.app">
-    ${getEnterpriseLogoSvg()}
-    <span>PAI&nbsp;UNIVERSE</span>
-  </a>
-  <nav class="ax-nav">
-    <a href="#services">Services</a>
-    <a href="#protocol">Protocol</a>
-    <a href="#status">Status</a>
-    <a href="https://github.com/pai-list" target="_blank" rel="noopener">GitHub</a>
-  </nav>
-  <a class="ax-cta" href="#services">Enter the Universe&nbsp;→</a>
-</header>
-
-<section class="ax-hero">
-  <div class="ax-orb a"></div><div class="ax-orb b"></div>
-  <div class="ax-ring"></div>
-  <div class="ax-hero-inner">
-    <span class="ax-eyebrow"><span class="dot"></span> Live edge · 16 services · 4 languages</span>
-    <h1 class="ax-h1">The sovereign<br/><span class="grad">AI agent universe</span><br/>on Pi Network.</h1>
-    <p class="ax-sub">AxiomID is the universal entry point to the PAI Universe — identity, skills, memory and machine labor living together on a single edge-first protocol. Built for humans, readable by agents, honest by design.</p>
-    <div class="ax-actions">
-      <a class="ax-btn ax-btn-p" href="#services">Explore the universe ↴</a>
-      <a class="ax-btn ax-btn-g" href="/agent.json">agent.json</a>
-      <a class="ax-btn ax-btn-g" href="/llms.txt">llms.txt</a>
-    </div>
-    <div class="ax-stats">
-      <div class="ax-stat"><b>16</b><span>Live services</span></div>
-      <div class="ax-stat"><b>4</b><span>Languages</span></div>
-      <div class="ax-stat"><b>24/7</b><span>Edge-first</span></div>
-      <div class="ax-stat"><b>1</b><span>Universal hub</span></div>
-    </div>
-  </div>
-</section>
-
-<div class="ax-ticker" aria-hidden="true"><div class="ax-ticker-track">
-  ${[...ALL_SERVICES, ...ALL_SERVICES].map(sd => `<span>${sd.name}</span>`).join('')}
-  <b>governed by humans</b><span>·</span><b>machines never lie when the wire is honest</b><span>·</span><b>Pi Network</b><span>·</span><b>edge-first</b><span>·</span>
-</div></div>
-
-<section class="ax-sec" id="services">
-  <div class="ax-sec-head">
-    <div><div class="ax-kicker">Live services</div><h2 class="ax-sec-h2">One universe · sixteen portals</h2>
-    <p style="color:#64748b;max-width:520px;line-height:1.7;margin-top:.6rem;">Every service below is a live subdomain served from the edge. Open one.</p></div>
-    <a class="ax-btn ax-btn-g" href="https://github.com/pai-list" target="_blank" rel="noopener">Source on GitHub →</a>
-  </div>
-  <div class="ax-grid">
-    ${servicesCards}
-  </div>
-</section>
-
-<section class="ax-sec" id="protocol">
-  <div class="ax-duo">
-    <div class="ax-duo-copy">
-      <div class="ax-kicker">Protocol</div>
-      <h3>Machines find us the same way humans do.</h3>
-      <p>The universe exposes its wiring at three documented entry points — a plain-text map for LLMs, a JSON handshake for agents, and the MCP discovery contract. No dark paths; everything discoverable is also verifiable.</p>
-      <p>Identity, memory, skills, labor: each layer owns its subdomain and its protocol, all under one umbrella host.</p>
-      <div class="ax-langs">
-        <span class="ax-lang-chip"><b>EN</b> English</span>
-        <span class="ax-lang-chip"><b>AR</b> العربية</span>
-        <span class="ax-lang-chip"><b>ZH</b> 中文</span>
-        <span class="ax-lang-chip"><b>HI</b> हिन्दी</span>
-      </div>
-    </div>
-    <div class="ax-term" id="term">
-      <div class="ax-term-bar"><span class="ax-term-dot" style="background:#f87171"></span><span class="ax-term-dot" style="background:#fbbf24"></span><span class="ax-term-dot" style="background:#34d399"></span><span>axiomid.app / docs</span></div>
-      <div class="ax-term-tabs">
-        <button class="ax-term-tab" data-f="llms">llms.txt</button>
-        <button class="ax-term-tab" data-f="agent">agent.json</button>
-        <button class="ax-term-tab" data-f="mcp">mcp.json</button>
-      </div>
-      <pre class="ax-term-code on" data-f="llms"># PAI Universe — machine-readable index
-## axiomid.app (universal hub)
-- https://axiomid.app/llms.txt
-- /health → {"status":"healthy","protocol":"axiomid"}
-## Services
-- index  index.axiomid.app   route mirror
-- skills skills.axiomid.app  registry + MCP
-- earn   earn.axiomid.app    machine labor
-- learn  learn.axiomid.app   protocol academy
-- node   node.axiomid.app    runtime portal
-- auth   auth.axiomid.app    DID + OAuth2
-- piverify.axiomid.app       KYA /health
-$ curl -s https://axiomid.app/health</pre>
-      <pre class="ax-term-code" data-f="agent">{
-  "name": "axiomid",
-  "description": "PAI Universe universal hub",
-  "roles": ["hub", "identity"],
-  "languages": ["en", "ar", "zh", "hi"],
-  "discovery": {
-    "llms_txt": "https://axiomid.app/llms.txt",
-    "agentic_txt": "https://axiomid.app/agentic.txt",
-    "agent_json": "https://axiomid.app/agent.json",
-    "mcp_endpoint": "https://axiomid.app/mcp.json"
-  }
-}</pre>
-      <pre class="ax-term-code" data-f="mcp">{
-  "name": "pai-universe-live",
-  "protocol": "publicmcp",
-  "version": "2026-08-08",
-  "capabilities": {
-    "skills": "skills.axiomid.app/mcp",
-    "registry": "mcp.axiomid.app",
-    "pricing": "per-call x402"
-  },
-  "transport": "https://axiomid.app/.well-known/mcp.json"
-}</pre>
-    </div>
-  </div>
-</section>
-
-<section class="ax-cta-band" id="status">
-  <div class="ax-cta-panel">
-    <h2>Build on the edge. Claim your port.</h2>
-    <p>The PAI Universe is open — every subdomain is a live endpoint, every endpoint is a claim humans can audit. Fork the protocol, run your node, teach the registry a skill.</p>
-    <div class="ax-actions" style="justify-content:center">
-      <a class="ax-btn ax-btn-p" href="https://github.com/pai-list" target="_blank" rel="noopener">GitHub org →</a>
-      <a class="ax-btn ax-btn-g" href="https://skills.axiomid.app">skills.axiomid.app →</a>
-    </div>
-  </div>
-</section>
-
-${getFooterHtml()}
-
-<script>
-const axReveal = new IntersectionObserver((es) => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); axReveal.unobserve(e.target); } }), { threshold: .12 });
-document.querySelectorAll('[data-reveal]').forEach(el => axReveal.observe(el));
-</script>
-<script>
-(function() {
-  document.querySelectorAll('.ax-term-tab').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.ax-term-tab').forEach(b => b.classList.toggle('on', b === btn));
-      document.querySelectorAll('.ax-term-code').forEach(c => c.classList.toggle('on', c.dataset.f === btn.dataset.f));
-    });
-  });
-  document.querySelector('.ax-term-tab').classList.add('on');
-  document.querySelector('.ax-term-code').classList.add('on');
-})();
-</script>
-</body></html>`;
-}
-
+/* NODE + HARNESS PAGES (survived the apex-section cut — served on node./harness. subdomains) */
 function getNodeHtml(): string {
   return `<!doctype html>
 <html lang="en" dir="ltr">
@@ -1446,7 +1156,6 @@ ${getFooterHtml()}
 </body></html>`;
 }
 
-/* 1. INDEX MIRROR PAGE (index.axiomid.app) */
 function getIndexHtml(): string {
   return `<!doctype html>
 <html lang="en" dir="ltr">
