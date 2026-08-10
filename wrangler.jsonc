@@ -16,7 +16,5 @@
     { "pattern": "learn.axiomid.app/*", "zone_name": "axiomid.app" },
     { "pattern": "harness.axiomid.app/*", "zone_name": "axiomid.app" },
     { "pattern": "node.axiomid.app/*", "zone_name": "axiomid.app" },
-    { "pattern": "skills.axiomid.app/*", "zone_name": "axiomid.app" },
-    { "pattern": "mcp.axiomid.app/*", "zone_name": "axiomid.app" },
   ]
 }
