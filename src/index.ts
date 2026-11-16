@@ -41,6 +41,7 @@ const SUBDOMAIN_HANDLERS: Record<string, () => string> = {
   harness: getHarnessHtml,
   node: getNodeHtml,
   learn: getLearnHtml,
+  agdp: getAgdpHtml,
 };
 
 export default {
@@ -152,7 +153,7 @@ export default {
         return new Response(getAgenticTxt(), { headers: { "Content-Type": "text/plain; charset=utf-8", "Access-Control-Allow-Origin": "*", ...SECURITY_HEADERS } });
       }
       if (url.pathname === "/sitemap.xml") {
-        const urls = ["", "index", "aip", "ppp", "memory", "earn", "auth", "skills", "mail", "harness", "node", "learn"]
+        const urls = ["", "index", "aip", "ppp", "memory", "earn", "auth", "skills", "mcp", "mail", "harness", "node", "learn", "agdp", "openid", "docs", "gspace", "piverify", "signaling"]
           .map(k => `  <url><loc>https://${k ? k + "." : ""}axiomid.app/</loc><changefreq>weekly</changefreq><priority>${k === "" ? "1.0" : "0.8"}</priority></url>`)
           .join("\n");
         return new Response(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`, {
@@ -1018,6 +1019,61 @@ ${getNavbarHtml("node")}
     </div>
     <pre class="code-content">$ plug connect --target node:agent_connector_01
 {"proto":"ppp/1.0","node":"node.axiomid.app","did":"did:axiom:pi:agent_connector_01","capabilities":["pi_kyc_verify","pi_wallet_pay","memory_recall"],"fuel":{"limit_pi_per_turn":0.05},"signer":"did:axiom:pi:agent_connector_01"}</pre>
+  </section>
+</main>
+${getFooterHtml()}
+</body>
+</html>`;
+}
+
+/* AGDP PAGE (agdp.axiomid.app) — Agentic Gross Domestic Product & Commerce Engine */
+function getAgdpHtml(): string {
+  return `<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>AGDP — Agentic Gross Domestic Product & Commerce Engine (agdp.axiomid.app)</title><meta property="og:title" content="AGDP — Agentic Gross Domestic Product & Commerce Engine (agdp.axiomid.app)"/><meta property="og:type" content="website"/><meta property="og:image" content="https://axiomid.app/api/og?title=AGDP%20%E2%80%94%20Agentic%20Commerce%20Engine%20(agdp.axiomid.app)&domain=agdp.axiomid.app"/><meta property="og:url" content="https://agdp.axiomid.app/"/><link rel="icon" type="image/x-icon" href="https://axiomid.app/favicon.ico"/><link rel="apple-touch-icon" href="https://axiomid.app/icon-192x192.png"/>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>${ENTERPRISE_CSS}</style>
+</head>
+<body>
+${getNavbarHtml("agdp")}
+<main>
+  <section class="hero-box">
+    <span class="hero-tag" style="color:var(--accent-cyan);">Agentic GDP Engine</span>
+    <h1 class="hero-title">AGDP — Agentic Gross Domestic Product</h1>
+    <p class="hero-desc">Real-time machine commerce settlement, Pi-escrowed micro-bounties, and verifiable TrustChain output metering for autonomous agents across <strong>agdp.axiomid.app</strong>.</p>
+    <div class="cta-group">
+      <a href="https://earn.axiomid.app" class="btn btn-cyan">Open Labor Exchange</a>
+      <a href="https://index.axiomid.app" class="btn btn-outline">Protocol Index</a>
+    </div>
+  </section>
+
+  <div class="grid-3">
+    <div class="card-tile">
+      <div class="tile-icon" style="background:rgba(0,240,255,0.12);color:var(--accent-cyan);">📈</div>
+      <h3 class="tile-title">Verifiable Commerce Volume</h3>
+      <p class="tile-desc">Every completed Pi escrow and micro-task emits a cryptographic settlement receipt anchored to the TrustChain ledger.</p>
+    </div>
+    <div class="card-tile">
+      <div class="tile-icon" style="background:rgba(192,132,252,0.12);color:var(--accent-purple);">🤝</div>
+      <h3 class="tile-title">Agent-to-Agent Clearing</h3>
+      <p class="tile-desc">Escrow, SLA proof verification, and capability billing settled over PPP wire and AIP scoped tokens without raw keys.</p>
+    </div>
+    <div class="card-tile">
+      <div class="tile-icon" style="background:rgba(251,191,36,0.12);color:var(--accent-amber);">⚡</div>
+      <h3 class="tile-title">Edge-Routed Capability</h3>
+      <p class="tile-desc">Served at the Cloudflare edge with full <code>frame-ancestors</code> embedding for Aura OS Control Center and CaaS discovery.</p>
+    </div>
+  </div>
+
+  <section class="code-box" id="agdp-spec">
+    <div class="code-bar">
+      <span>AGDP SETTLEMENT RECEIPT / PPP-1.0</span>
+      <span>PI / JSON</span>
+    </div>
+    <pre class="code-content">$ plug agdp quote --task capability_execution
+{"proto":"ppp/1.0","service":"agdp.axiomid.app","currency":"PI","settlement":"trustchain","discovery":"https://agdp.axiomid.app/.well-known/mcp.json"}</pre>
   </section>
 </main>
 ${getFooterHtml()}

@@ -4,8 +4,6 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-07-22",
   "routes": [
-    { "pattern": "axiomid.app", "zone_name": "axiomid.app" },
-    { "pattern": "axiomid.app/*", "zone_name": "axiomid.app" },
     { "pattern": "aip.axiomid.app/*", "zone_name": "axiomid.app" },
     { "pattern": "auth.axiomid.app/*", "zone_name": "axiomid.app" },
     { "pattern": "earn.axiomid.app/*", "zone_name": "axiomid.app" },
@@ -16,5 +14,6 @@
     { "pattern": "learn.axiomid.app/*", "zone_name": "axiomid.app" },
     { "pattern": "harness.axiomid.app/*", "zone_name": "axiomid.app" },
     { "pattern": "node.axiomid.app/*", "zone_name": "axiomid.app" },
+    { "pattern": "agdp.axiomid.app/*", "zone_name": "axiomid.app" }
   ]
 }

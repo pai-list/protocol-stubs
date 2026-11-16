@@ -11,6 +11,10 @@ describe("protocol-stubs Edge Worker Suite", () => {
     { subdomain: "auth", title: "Pi Network OAuth2 & W3C DID Issuer", domain: "auth.axiomid.app" },
     { subdomain: "skills", title: "Pi Agentic Skills & Dedicated MCP Server", domain: "skills.axiomid.app" },
     { subdomain: "mail", title: "Agentic Email Routing Backbone", domain: "mail.axiomid.app" },
+    { subdomain: "harness", title: "Harness — The Forge", domain: "harness.axiomid.app" },
+    { subdomain: "node", title: "Node Port — Agent Node Registry", domain: "node.axiomid.app" },
+    { subdomain: "learn", title: "Learn — PAI Protocol Academy", domain: "learn.axiomid.app" },
+    { subdomain: "agdp", title: "AGDP — Agentic Gross Domestic Product & Commerce Engine", domain: "agdp.axiomid.app" },
   ];
 
   describe("Subdomain HTML Routing", () => {
