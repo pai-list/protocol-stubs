@@ -203,10 +203,23 @@ export default {
         });
       }
 
-      // Subdomain HTML routing
+      // Subdomain HTML routing (plus local dev/index fallback for /<subdomain> and ?subdomain=<key>)
+      if (host === "localhost" || host === "127.0.0.1" || key === "index") {
+        const querySub = url.searchParams.get("subdomain")?.toLowerCase() ?? "";
+        const pathSub = url.pathname.replace(/^\/+/, "").split("/")[0]?.toLowerCase() ?? "";
+        const overrideKey = querySub || pathSub;
+        if (overrideKey && overrideKey in SUBDOMAIN_HANDLERS) {
+          return html(SUBDOMAIN_HANDLERS[overrideKey]());
+        }
+      }
+
       const handler = SUBDOMAIN_HANDLERS[key];
       if (handler) {
         return html(handler());
+      }
+
+      if (host === "localhost" || host === "127.0.0.1") {
+        return html(getIndexHtml());
       }
 
       // 404 for unrecognized subdomains

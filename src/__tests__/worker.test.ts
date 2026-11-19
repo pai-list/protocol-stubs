@@ -196,5 +196,16 @@ const json = await res.json() as { status: string; currency: string; bounties: A
       expect(res.headers.get("Access-Control-Allow-Methods")).toContain("GET, POST, OPTIONS");
       expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
     });
+
+    it("should route local path fallbacks /harness and /memory for local dev and index host", async () => {
+      for (const [path, title] of [
+        ["/harness", "Harness — The Forge"],
+        ["/memory", "7-Layer Vector & Graph Memory Engine"],
+      ] as const) {
+        const res = await worker.fetch(new Request(`http://localhost:8787${path}`));
+        expect(res.status).toBe(200);
+        expect(await res.text()).toContain(title);
+      }
+    });
   });
 });
